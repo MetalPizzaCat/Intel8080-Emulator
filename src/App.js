@@ -3,6 +3,7 @@ import './App.css';
 import React from 'react';
 import RegistersDisplay from './RegistersDisplay';
 import MemoryDisplay from './MemoryDisplay';
+import FlagsDisplay from './FlagsDisplay';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -22,9 +23,22 @@ export default class App extends React.Component {
           arg2: 3
         },
         {
+          operation: "add",
+          arg1: 4
+        },
+        {
           operation: "mov",
           arg1: "b",
           arg2: "a"
+        },
+        {
+          operation: "mvi",
+          arg1: "a",
+          arg2: 0xFF
+        },
+        {
+          operation: "ani",
+          arg1: 0xF0,
         },
         {
           operation: "sta",
@@ -34,6 +48,13 @@ export default class App extends React.Component {
           operation: "htl"
         }
       ],
+      flags: {
+        s: false,
+        z: false,
+        ac: false,
+        p: false,
+        c: false
+      },
       memory: Array(0xbb0 - 0x800).fill(0),
       codeText: "mvi a,78\n mov b,a\n hlt",
       /**
@@ -57,6 +78,27 @@ export default class App extends React.Component {
     };
     this.run = this.run.bind(this);
     this.assemble = this.assemble.bind(this);
+  }
+
+  parity(x, size) {
+    let parity = 0;
+    for (let i = 0; i < size; i++) {
+      parity += x & 1;
+      x = x >> 1;
+    }
+    return (parity % 2) === 0;
+  }
+
+  checkFlags(value) {
+    //clean value from any bits that technically don't fit into memory cell
+    const cleanValue = value & 0xFF;
+    return {
+      s: 0x80 === (cleanValue & 0x80),
+      z: cleanValue === 0,
+      ac: cleanValue > 0x09,
+      p: this.parity(cleanValue, 8),
+      c: value > 0xFF
+    }
   }
 
   advanceProgram() {
@@ -90,6 +132,42 @@ export default class App extends React.Component {
           };
         });
         break;
+      //adds A + other register/number, this does NOT write to CY flag
+      case "add":
+        this.setState(function (prev) {
+          prev.registry.a = (typeof operand.arg1) == "number" ? operand.arg1 : prev.registry[operand.arg1];
+          return {
+            memory: prev.memory
+          };
+        });
+        break;
+      case "ana":
+        {
+          let result = this.state.registry.a & this.state.registry[operand.arg1];
+          this.setState(prev => ({
+            registry: {
+              ...prev.registry,
+              a: result,
+            },
+            flags: this.checkFlags(result)
+          }))
+        }
+        break;
+      case "ani":
+        {
+          let result = this.state.registry.a & operand.arg1;
+          this.setState(prev => ({
+            registry: {
+              ...prev.registry,
+              a: result,
+            },
+            flags: this.checkFlags(result)
+          }))
+        }
+        break;
+      //adds A + other register/number, this does write to CY flag
+      case "adc":
+        break;
       case "htl":
         console.info("Finished execution");
         break;
@@ -104,13 +182,7 @@ export default class App extends React.Component {
   }
 
   run() {
-    let c1 = this.state.ProgramCounter < 945;
-    let c2 = this.state.ProgramCounter >= 0;
-    let c3 = this.state.program[this.state.ProgramCounter] !== 0x76
-    while (this.state.programCounter < 945 && this.state.programCounter >= 0 && this.state.program[this.state.programCounter] !== 0x76) {
 
-    }
-    console.log(this.state.registry);
   }
 
   assemble() {
@@ -130,6 +202,9 @@ export default class App extends React.Component {
         </div>
         <div className='Registers'>
           <RegistersDisplay registers={this.state.registry} />
+        </div>
+        <div>
+          <FlagsDisplay flags={this.state.flags} />
         </div>
         <div>
           <MemoryDisplay memory={this.state.memory} />

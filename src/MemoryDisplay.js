@@ -6,7 +6,7 @@ export default class MemoryDisplay extends React.Component {
         for (let i = 0; i < this.props.memory.length; i++) {
             let line = []
             for (let j = 0; j < 16; j++) {
-                line.push(<th key={i * 16 + j}>{this.props.memory[i * 16 + j]}</th>);
+                line.push(<td key={i * 16 + j}>{this.props.memory[i * 16 + j]}</td>);
             }
             memory.push(<tr key={i}>{line}</tr>)
         }
