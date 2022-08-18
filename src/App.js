@@ -4,7 +4,7 @@ import React from 'react';
 import RegistersDisplay from './RegistersDisplay';
 import MemoryDisplay from './MemoryDisplay';
 import FlagsDisplay from './FlagsDisplay';
-import Interpreter, { stepProgram } from './Interpreter';
+import Interpreter, { convertTextToCode, stepProgram } from './Interpreter';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -17,9 +17,21 @@ export default class App extends React.Component {
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
   }
 
-  run() { }
+  run() { this.assemble();}
 
-  assemble() { }
+  assemble() {
+    convertTextToCode(`
+    ;simple test program that
+    mvi a,3
+    add 4 ; uwu
+    mov b,a
+    mvi a,255
+    ;apply &
+    ani 240
+    sta 0800
+    ; :^)
+    hlt`)
+  }
 
   /**Convert user's text input into data structure suitable for this program */
   step() {

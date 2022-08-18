@@ -3,6 +3,8 @@
  * However the reason why functions are extracted and called with interpreter as argument is to make it easier to use with React's states
  */
 
+import { InstructionLengthInfo } from "./AssemblyInfo";
+
 /**Class that stores all of the processor related info */
 export default class Interpreter {
     constructor() {
@@ -111,6 +113,36 @@ export function checkFlags(value) {
         p: parity(cleanValue, 8),
         c: value > 0xFF
     }
+}
+
+export function convertTextToCode(text) {
+    let program = [];
+    //regular expression that will match every comment on every line
+    text = text.replaceAll(/( *)(;)(.*)/g, "");
+    const nameRegEx = /[A-z]{3}((?=\s+)|$)/;
+    let lines = text.split("\n").filter(token => token.length > 0);
+    let lineId = 0;
+    let result = [];
+    for (let line of lines) {
+        let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
+        let arg1 = parseInt(tokens[1]);
+        let arg2 = parseInt(tokens[2]);
+        if (!(tokens[0] in InstructionLengthInfo)) {
+            throw Error("Given instruction is recognized: '" + tokens[0] + "'");
+        }
+        if ((InstructionLengthInfo[tokens[0]] + 1) === tokens.length) {
+            program.push({
+                operation: tokens[0],
+                arg1: isNaN(arg1) ? tokens[1] : arg1,
+                arg2: isNaN(arg2) ? tokens[2] : arg2
+            });
+        }
+        else {
+            throw Error("Provided instruction has more/less operands then required")
+        }
+        console.log(tokens);
+    }
+    lineId++;
 }
 
 /**Moves to the next instruction and executes it*/
