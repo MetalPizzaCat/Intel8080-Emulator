@@ -121,7 +121,7 @@ export function convertTextToCode(text) {
     text = text.replaceAll(/( *)(;)(.*)/g, "");
     const nameRegEx = /[A-z]{3,4}((?=\s+)|$)/;
     const labelRegEx = /[A-z]+(?=:)/;
-    let lines = text.split("\n").filter(token => token.length > 0);
+    let lines = text.split("\n").filter(token => token.match(/^(\s)+$/) == null && token.length > 0);
     let lineId = 0;
     let result = [];
     for (let line of lines) {
@@ -215,26 +215,58 @@ export function stepProgram(interpreter) {
             interpreter.programCounter = interpreter.jumps[operand.arg1] - 1;
             break;
         case "push":
-            let value1 = 0;
-            let value2 = 0;
-            switch (operand.arg1) {
-                case "b":
-                    value1 = interpreter.registry.b;
-                    value2 = interpreter.registry.c;
-                    break;
-                case "d":
-                    value1 = interpreter.registry.d;
-                    value2 = interpreter.registry.e;
-                    break;
-                case "h":
-                    value1 = interpreter.registry.h;
-                    value2 = interpreter.registry.l;
-                    break;
-                default:
-                    throw Error("Invalid registry name provided");
+            {
+                let value1 = 0;
+                let value2 = 0;
+                switch (operand.arg1) {
+                    case "b":
+                        value1 = interpreter.registry.b;
+                        value2 = interpreter.registry.c;
+                        break;
+                    case "d":
+                        value1 = interpreter.registry.d;
+                        value2 = interpreter.registry.e;
+                        break;
+                    case "h":
+                        value1 = interpreter.registry.h;
+                        value2 = interpreter.registry.l;
+                        break;
+                    default:
+                        throw Error("Invalid registry name provided");
+                }
+                interpreter.memory[interpreter.stackPointer] = value1;
+                interpreter.memory[--interpreter.stackPointer] = value2;
             }
-            interpreter.memory[interpreter.stackPointer--] = value1;
-            interpreter.memory[interpreter.stackPointer--] = value2;
+            break;
+        case "pop":
+            {
+                let value2 = interpreter.memory[interpreter.stackPointer];
+                let value1 = interpreter.memory[++interpreter.stackPointer];
+                switch (operand.arg1) {
+                    case "b":
+                        interpreter.registry.b = value1;
+                        interpreter.registry.c = value2;
+                        break;
+                    case "d":
+                        interpreter.registry.d = value1;
+                        interpreter.registry.e = value2;
+                        break;
+                    case "h":
+                        interpreter.registry.h = value1;
+                        interpreter.registry.l = value2;
+                        break;
+                    default:
+                        throw Error("Invalid registry name provided");
+                }
+            }
+            break;
+        case "call":
+            interpreter.memory[interpreter.stackPointer] = (0x800 + interpreter.programCounter) & 0xFF;
+            interpreter.memory[--interpreter.stackPointer] = ((0x800 + interpreter.programCounter) & 0xFF00) >> 8;
+            interpreter.programCounter = interpreter.jumps[operand.arg1] - 1;
+            break;
+        case "ret":
+            let address = ((interpreter.memory[interpreter.stackPointer] << 8) & interpreter.memory[++interpreter.stackPointer]);
             break;
         case "htl":
             console.info("Finished execution");

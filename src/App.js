@@ -34,9 +34,16 @@ label:
     ani 240
     sta 0800
     push b
+    pop d
+    call func
     jmp label
     ; :^)
-    hlt`);
+    hlt
+    
+    func:
+    mvi d,23
+    ret
+    `);
     this.setState(prev => ({
       interpreter: {
         ...prev.interpreter,
