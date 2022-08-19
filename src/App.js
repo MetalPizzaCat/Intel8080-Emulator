@@ -18,7 +18,18 @@ export default class App extends React.Component {
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
   }
 
-  run() { this.assemble(); }
+  badModify(value) {
+    value.uwu = 'sdads';
+  }
+
+  run() {
+    let owo = {
+      uwu : 'uwu'
+    }
+    this.badModify(owo);
+    console.log(owo);
+    this.assemble();
+  }
 
   assemble() {
 
@@ -90,9 +101,9 @@ label:
           <MemoryDisplay memory={this.state.interpreter.memory} />
         </div>
         {
-        <div>
-          <StackDisplay memory={this.state.interpreter.memory} />
-        </div>
+          <div>
+            <StackDisplay memory={this.state.interpreter.memory} />
+          </div>
         }
       </div>
     </div>
