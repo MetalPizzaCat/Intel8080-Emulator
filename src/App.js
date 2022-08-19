@@ -4,7 +4,7 @@ import React from 'react';
 import RegistersDisplay from './RegistersDisplay';
 import MemoryDisplay from './MemoryDisplay';
 import FlagsDisplay from './FlagsDisplay';
-import Interpreter, { convertTextToCode, stepProgram } from './Interpreter';
+import Interpreter, { convertTextToCode, executionStep } from './Interpreter';
 import StackDisplay from './StackDisplay';
 
 export default class App extends React.Component {
@@ -18,36 +18,26 @@ export default class App extends React.Component {
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
   }
 
-  badModify(value) {
-    value.uwu = 'sdads';
-  }
-
   run() {
-    let owo = {
-      uwu : 'uwu'
-    }
-    this.badModify(owo);
-    console.log(owo);
     this.assemble();
   }
 
   assemble() {
-
     let code = convertTextToCode(`
     ;simple test program that
     mvi a,3
 label:
-    add 4 ; uwu
+    adi 4 ; uwu
     mov b,a
     mvi a,255
     mvi c,90
     ;apply &
     ani 240
-    sta 0800
-    push b
-    pop d
-    call func
-    jmp label
+    ;sta 0800
+    ;push b
+    ;pop d
+    ;call func
+    ;jmp label
     ; :^)
     hlt
     
@@ -58,8 +48,7 @@ label:
     this.setState(prev => ({
       interpreter: {
         ...prev.interpreter,
-        jumps: code.jumps,
-        program: code.program
+        memory: code
       }
     }));
   }
@@ -67,7 +56,7 @@ label:
   /**Convert user's text input into data structure suitable for this program */
   step() {
     this.setState(prev => ({
-      interpreter: stepProgram(prev.interpreter)
+      interpreter: executionStep(prev.interpreter)
     }));
   }
 

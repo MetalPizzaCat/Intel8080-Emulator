@@ -3,7 +3,7 @@
  * However the reason why functions are extracted and called with interpreter as argument is to make it easier to use with React's states
  */
 
-import { InstructionLengthInfo } from "./AssemblyInfo";
+import { InstructionLengthInfo, Instructions } from "./AssemblyInfo";
 
 /**Class that stores all of the processor related info */
 export default class Interpreter {
@@ -82,9 +82,39 @@ export function checkFlags(value) {
     }
 }
 
+function getInstruction(tokens) {
+    const token1IsAName = tokens[1] !== undefined && isNaN(parseInt(tokens[1]));
+    const token2IsAName = tokens[2] !== undefined && isNaN(parseInt(tokens[2]));
+    if (token1IsAName && token2IsAName) {
+        return Instructions[tokens[0]][tokens[1]][tokens[2]];
+    }
+    if (token1IsAName) {
+        return Instructions[tokens[0]][tokens[1]];
+    } else {
+        return Instructions[tokens[0]];
+    }
+}
+
+function convertTokensToBytes(tokens) {
+    let result = [];
+    let value1 = parseInt(tokens[1]);
+    let value2 = parseInt(tokens[2]);
+    let value1IsAName = tokens[1] !== undefined && isNaN(value1);
+    let value2IsAName = tokens[2] !== undefined && isNaN(value2);
+    if (value1IsAName && value2IsAName) {
+        return [Instructions[tokens[0]][tokens[1]][tokens[2]]];
+    }
+    if (value1IsAName) {
+        return [Instructions[tokens[0]][tokens[1]], value2];
+    } else {
+        return value1 === undefined ? [Instructions[tokens[0]]] : [Instructions[tokens[0]], value1];
+    }
+}
+
 export function convertTextToCode(text) {
-    let program = [];
+    let program = Array(0xbb0 - 0x800).fill(0);
     let jumps = {};
+    let counter = 0;
     //regular expression that will match every comment on every line
     text = text.replaceAll(/( *)(;)(.*)/g, "");
     const nameRegEx = /[A-z]{3,4}((?=\s+)|$)/;
@@ -101,155 +131,24 @@ export function convertTextToCode(text) {
         let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
         let arg1 = parseInt(tokens[1]);
         let arg2 = parseInt(tokens[2]);
-        if (!(tokens[0] in InstructionLengthInfo)) {
-            throw Error("Given instruction is recognized: '" + tokens[0] + "'");
-        }
-        if ((InstructionLengthInfo[tokens[0]] + 1) === tokens.length) {
-            program.push({
-                operation: tokens[0],
-                arg1: isNaN(arg1) ? tokens[1] : arg1,
-                arg2: isNaN(arg2) ? tokens[2] : arg2
-            });
-        }
-        else {
-            throw Error("Provided instruction has more/less operands then required")
+        let bytes = convertTokensToBytes(tokens);
+        for (let byte of bytes) {
+            program[counter++] = byte;
         }
         console.log(tokens);
         lineId++;
     }
-    return {
-        program: program,
-        jumps: jumps
-    }
-}
-
-/**Moves to the next instruction and executes it*/
-export function stepProgram(interpreter) {
-    const operand = interpreter.program[interpreter.programCounter];
-    switch (operand.operation) {
-        case "mov":
-            interpreter.registry[operand.arg1] = interpreter.registry[operand.arg2];
-            break;
-        case "mvi":
-            interpreter.registry[operand.arg1] = operand.arg2;
-            break;
-        case "sta":
-            interpreter.memory[operand.arg1 - 0x800] = interpreter.registry.a;
-            break;
-        //adds A + other register/number, this does NOT write to CY flag
-        case "add":
-            {
-                let value = (typeof operand.arg1) === "number" ? operand.arg1 : interpreter.registry[operand.arg1];
-                let result = interpreter.registry.a + value;
-                interpreter.flags = checkFlags(result);
-                interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
-            }
-            break;
-        //adds A + other register/number, this does write to CY flag
-        case "adc":
-            {
-                let value = (typeof operand.arg1) === "number" ? operand.arg1 : interpreter.registry[operand.arg1];
-                let result = interpreter.registry.a + value + interpreter.flags.c ? 1 : 0;
-                interpreter.flags = checkFlags(result);
-                interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
-            } break;
-        case "cma":
-            interpreter.registry.a = ~interpreter.registry.a;
-            break;
-        case "cmc":
-            interpreter.flags.c = !interpreter.flags.c;
-            break;
-        case "ana":
-            {
-                let result = interpreter.registry.a & interpreter.registry[operand.arg1];
-                let flags = checkFlags(result);
-                //Carry bit must be reset according to documentation
-                flags.c = false;
-                interpreter.registry.a = result;
-                interpreter.flags = flags;
-            }
-            break;
-        case "ani":
-            {
-                let result = interpreter.registry.a & operand.arg1;
-                let flags = checkFlags(result);
-                //Carry bit must be reset according to documentation
-                flags.c = false;
-                interpreter.registry.a = result;
-                interpreter.flags = flags;
-            }
-            break;
-        case "jmp":
-            interpreter.programCounter = interpreter.jumps[operand.arg1] - 1;
-            break;
-        case "push":
-            {
-                let value1 = 0;
-                let value2 = 0;
-                switch (operand.arg1) {
-                    case "b":
-                        value1 = interpreter.registry.b;
-                        value2 = interpreter.registry.c;
-                        break;
-                    case "d":
-                        value1 = interpreter.registry.d;
-                        value2 = interpreter.registry.e;
-                        break;
-                    case "h":
-                        value1 = interpreter.registry.h;
-                        value2 = interpreter.registry.l;
-                        break;
-                    default:
-                        throw Error("Invalid registry name provided");
-                }
-                interpreter.memory[interpreter.stackPointer] = value1;
-                interpreter.memory[--interpreter.stackPointer] = value2;
-            }
-            break;
-        case "pop":
-            {
-                let value2 = interpreter.memory[interpreter.stackPointer];
-                let value1 = interpreter.memory[++interpreter.stackPointer];
-                switch (operand.arg1) {
-                    case "b":
-                        interpreter.registry.b = value1;
-                        interpreter.registry.c = value2;
-                        break;
-                    case "d":
-                        interpreter.registry.d = value1;
-                        interpreter.registry.e = value2;
-                        break;
-                    case "h":
-                        interpreter.registry.h = value1;
-                        interpreter.registry.l = value2;
-                        break;
-                    default:
-                        throw Error("Invalid registry name provided");
-                }
-            }
-            break;
-        case "call":
-            interpreter.memory[interpreter.stackPointer] = (0x800 + interpreter.programCounter) & 0xFF;
-            interpreter.memory[--interpreter.stackPointer] = ((0x800 + interpreter.programCounter) & 0xFF00) >> 8;
-            interpreter.programCounter = interpreter.jumps[operand.arg1] - 1;
-            break;
-        case "ret":
-            let address = ((interpreter.memory[interpreter.stackPointer] << 8) & interpreter.memory[++interpreter.stackPointer]);
-            break;
-        case "htl":
-            console.info("Finished execution");
-            break;
-        default:
-            console.error("Unknown operand " + interpreter.program[interpreter.programCounter].operation);
-            break;
-    }
-    interpreter.programCounter++;
-    //console.log(operand.command);
-    return interpreter;
+    return program;
 }
 
 function add(interpreter, value) {
     let result = interpreter.registry.a + interpreter.registry[value];
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+
+function adi(interpreter, value) {
+    let result = interpreter.registry.a + value;
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
@@ -259,6 +158,13 @@ function adc(interpreter, value) {
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
+
+function aci(interpreter, value) {
+    let result = interpreter.registry.a + value + (interpreter.flags.c ? 1 : 0);
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+
 
 function ana(interpreter, value) {
     let result = interpreter.registry.a & interpreter.registry[value];
@@ -281,8 +187,16 @@ function ani(interpreter, value) {
 export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
-        //mov commands
         //i generated them via c# script :P
+        case 0x76: case 118:
+            throw Error("Program exit handling is not implemented");
+            break;
+        case 0xe6:
+            ani(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
+        case Instructions.adi:
+            adi(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
         //----MOV------
         case 0x40: //mov b,b
             interpreter.registry.b = interpreter.registry.b;
@@ -478,28 +392,28 @@ export function executionStep(interpreter) {
             break;
         //------MVI------
         case 0x6: //mvi b,d8
-            interpreter.registry.b = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.b = interpreter.memory[++interpreter.programCounter];
             break;
         case 0xe: //mvi c,d8
-            interpreter.registry.c = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.c = interpreter.memory[++interpreter.programCounter];
             break;
         case 0x16: //mvi d,d8
-            interpreter.registry.d = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.d = interpreter.memory[++interpreter.programCounter];
             break;
         case 0x1e: //mvi e,d8
-            interpreter.registry.e = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.e = interpreter.memory[++interpreter.programCounter];
             break;
         case 0x26: //mvi h,d8
-            interpreter.registry.h = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.h = interpreter.memory[++interpreter.programCounter];
             break;
         case 0x2e: //mvi l,d8
-            interpreter.registry.l = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.l = interpreter.memory[++interpreter.programCounter];
             break;
         case 0x36: //mvi m,d8
-            interpreter.registry.m = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.m = interpreter.memory[++interpreter.programCounter];
             break;
         case 0x3e: //mvi a,d8
-            interpreter.registry.a = interpreter.memory[interpreter.programCounter];
+            interpreter.registry.a = interpreter.memory[++interpreter.programCounter];
             break;
         //------ADD------
         case 0x80: //add b
@@ -579,4 +493,6 @@ export function executionStep(interpreter) {
         default:
             throw Error("Unrecognized byte code");
     }
+    interpreter.programCounter++;
+    return interpreter;
 }
