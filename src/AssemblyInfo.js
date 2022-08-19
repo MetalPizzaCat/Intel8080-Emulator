@@ -10,5 +10,6 @@ export const InstructionLengthInfo = {
     "add": 1,
     "adc": 1,
     "sta": 1,
+    "jmp": 1,
     "hlt": 0
 }

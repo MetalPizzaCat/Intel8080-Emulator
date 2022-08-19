@@ -117,13 +117,20 @@ export function checkFlags(value) {
 
 export function convertTextToCode(text) {
     let program = [];
+    let jumps = {};
     //regular expression that will match every comment on every line
     text = text.replaceAll(/( *)(;)(.*)/g, "");
-    const nameRegEx = /[A-z]{3}((?=\s+)|$)/;
+    const nameRegEx = /[A-z]{3,4}((?=\s+)|$)/;
+    const labelRegEx = /[A-z]+(?=:)/;
     let lines = text.split("\n").filter(token => token.length > 0);
     let lineId = 0;
     let result = [];
     for (let line of lines) {
+        let labelName = line.match(labelRegEx);
+        if (labelName != null) {
+            jumps[labelName[0]] = lineId;
+            continue;
+        }
         let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
         let arg1 = parseInt(tokens[1]);
         let arg2 = parseInt(tokens[2]);
@@ -141,8 +148,12 @@ export function convertTextToCode(text) {
             throw Error("Provided instruction has more/less operands then required")
         }
         console.log(tokens);
+        lineId++;
     }
-    lineId++;
+    return {
+        program: program,
+        jumps: jumps
+    }
 }
 
 /**Moves to the next instruction and executes it*/
@@ -201,6 +212,9 @@ export function stepProgram(interpreter) {
                 interpreter.flags = flags;
             }
             break;
+        case "jmp":
+            interpreter.programCounter = interpreter.jumps[operand.arg1] - 1;
+            break;
         case "htl":
             console.info("Finished execution");
             break;
@@ -209,6 +223,6 @@ export function stepProgram(interpreter) {
             break;
     }
     interpreter.programCounter++;
-    console.log(interpreter.registry);
+    console.log(operand.command);
     return interpreter;
 }

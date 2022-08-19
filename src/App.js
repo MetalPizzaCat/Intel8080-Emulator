@@ -17,20 +17,30 @@ export default class App extends React.Component {
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
   }
 
-  run() { this.assemble();}
+  run() { this.assemble(); }
 
   assemble() {
-    convertTextToCode(`
+
+    let code = convertTextToCode(`
     ;simple test program that
     mvi a,3
+label:
     add 4 ; uwu
     mov b,a
     mvi a,255
     ;apply &
     ani 240
     sta 0800
+    jmp label
     ; :^)
-    hlt`)
+    hlt`);
+    this.setState(prev => ({
+      interpreter: {
+        ...prev.interpreter,
+        jumps: code.jumps,
+        program: code.program
+      }
+    }));
   }
 
   /**Convert user's text input into data structure suitable for this program */
