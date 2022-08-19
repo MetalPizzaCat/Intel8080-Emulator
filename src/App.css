@@ -10,5 +10,5 @@
   color: white;
 }
 .Editors{
-  display: inline-block;
+  display: flex;
 }

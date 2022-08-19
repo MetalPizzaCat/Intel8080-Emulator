@@ -64,7 +64,7 @@ export default class Interpreter {
         this.programCounter = 0;
         //This emulator has address space from 0800 to 0bb0
         //and 0bb0-0800 is 380 which is 944 in decimal
-        this.stackPointer = 944;
+        this.stackPointer = 943;
         /**Stores values of the register */
         this.registry = {
             a: 0,
@@ -89,7 +89,6 @@ export function parity(x, size) {
     }
     return (parity % 2) === 0;
 }
-
 
 /**This will extract value and return number
  * So if passed id is register name it will return value of the register
@@ -215,6 +214,28 @@ export function stepProgram(interpreter) {
         case "jmp":
             interpreter.programCounter = interpreter.jumps[operand.arg1] - 1;
             break;
+        case "push":
+            let value1 = 0;
+            let value2 = 0;
+            switch (operand.arg1) {
+                case "b":
+                    value1 = interpreter.registry.b;
+                    value2 = interpreter.registry.c;
+                    break;
+                case "d":
+                    value1 = interpreter.registry.d;
+                    value2 = interpreter.registry.e;
+                    break;
+                case "h":
+                    value1 = interpreter.registry.h;
+                    value2 = interpreter.registry.l;
+                    break;
+                default:
+                    throw Error("Invalid registry name provided");
+            }
+            interpreter.memory[interpreter.stackPointer--] = value1;
+            interpreter.memory[interpreter.stackPointer--] = value2;
+            break;
         case "htl":
             console.info("Finished execution");
             break;
@@ -223,6 +244,6 @@ export function stepProgram(interpreter) {
             break;
     }
     interpreter.programCounter++;
-    console.log(operand.command);
+    //console.log(operand.command);
     return interpreter;
 }

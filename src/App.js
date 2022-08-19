@@ -5,6 +5,7 @@ import RegistersDisplay from './RegistersDisplay';
 import MemoryDisplay from './MemoryDisplay';
 import FlagsDisplay from './FlagsDisplay';
 import Interpreter, { convertTextToCode, stepProgram } from './Interpreter';
+import StackDisplay from './StackDisplay';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -28,9 +29,11 @@ label:
     add 4 ; uwu
     mov b,a
     mvi a,255
+    mvi c,90
     ;apply &
     ani 240
     sta 0800
+    push b
     jmp label
     ; :^)
     hlt`);
@@ -79,6 +82,11 @@ label:
         <div>
           <MemoryDisplay memory={this.state.interpreter.memory} />
         </div>
+        {
+        <div>
+          <StackDisplay memory={this.state.interpreter.memory} />
+        </div>
+        }
       </div>
     </div>
   }
