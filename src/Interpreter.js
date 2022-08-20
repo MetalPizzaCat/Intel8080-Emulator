@@ -82,21 +82,14 @@ export function checkFlags(value) {
     }
 }
 
-function getInstruction(tokens) {
-    const token1IsAName = tokens[1] !== undefined && isNaN(parseInt(tokens[1]));
-    const token2IsAName = tokens[2] !== undefined && isNaN(parseInt(tokens[2]));
-    if (token1IsAName && token2IsAName) {
-        return Instructions[tokens[0]][tokens[1]][tokens[2]];
-    }
-    if (token1IsAName) {
-        return Instructions[tokens[0]][tokens[1]];
-    } else {
-        return Instructions[tokens[0]];
-    }
-}
-
 function convertTokensToBytes(tokens) {
-    let result = [];
+    let argumentCount = 0;
+    for (let i = 1; i < tokens.length; i++) {
+        argumentCount += (tokens[i] !== undefined ? 1 : 0);
+    }
+    if (argumentCount !== InstructionLengthInfo[tokens[0]]) {
+        throw Error("Invalid number of arguments");
+    }
     let value1 = parseInt(tokens[1]);
     let value2 = parseInt(tokens[2]);
     let value1IsAName = tokens[1] !== undefined && isNaN(value1);
@@ -117,11 +110,10 @@ export function convertTextToCode(text) {
     let counter = 0;
     //regular expression that will match every comment on every line
     text = text.replaceAll(/( *)(;)(.*)/g, "");
-    const nameRegEx = /[A-z]{3,4}((?=\s+)|$)/;
+    //const nameRegEx = /[A-z]{3,4}((?=\s+)|$)/;
     const labelRegEx = /[A-z]+(?=:)/;
     let lines = text.split("\n").filter(token => token.match(/^(\s)+$/) == null && token.length > 0);
     let lineId = 0;
-    let result = [];
     for (let line of lines) {
         let labelName = line.match(labelRegEx);
         if (labelName != null) {
@@ -129,8 +121,6 @@ export function convertTextToCode(text) {
             continue;
         }
         let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
-        let arg1 = parseInt(tokens[1]);
-        let arg2 = parseInt(tokens[2]);
         let bytes = convertTokensToBytes(tokens);
         for (let byte of bytes) {
             program[counter++] = byte;
@@ -164,7 +154,6 @@ function aci(interpreter, value) {
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
-
 
 function ana(interpreter, value) {
     let result = interpreter.registry.a & interpreter.registry[value];

@@ -7,6 +7,7 @@ export const InstructionLengthInfo = {
     "mvi": 2,
     "ana": 1,
     "ani": 1,
+    "adi": 1,
     "add": 1,
     "adc": 1,
     "sta": 1,

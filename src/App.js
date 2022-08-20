@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import React from 'react';
 import RegistersDisplay from './RegistersDisplay';
@@ -25,7 +24,7 @@ export default class App extends React.Component {
   assemble() {
     let code = convertTextToCode(`
     ;simple test program that
-    mvi a,3
+    mvi a,4
 label:
     adi 4 ; uwu
     mov b,a
@@ -89,11 +88,9 @@ label:
         <div>
           <MemoryDisplay memory={this.state.interpreter.memory} />
         </div>
-        {
-          <div>
-            <StackDisplay memory={this.state.interpreter.memory} />
-          </div>
-        }
+        <div>
+          <StackDisplay memory={this.state.interpreter.memory} />
+        </div>
       </div>
     </div>
   }
