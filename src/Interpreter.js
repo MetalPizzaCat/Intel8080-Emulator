@@ -3,7 +3,7 @@
  * However the reason why functions are extracted and called with interpreter as argument is to make it easier to use with React's states
  */
 
-import { InstructionLengthInfo, Instructions } from "./AssemblyInfo";
+import { InstructionLengthInfo, Instructions, JumpInstructions } from "./AssemblyInfo";
 
 /**Class that stores all of the processor related info */
 export default class Interpreter {
@@ -82,6 +82,21 @@ export function checkFlags(value) {
     }
 }
 
+/**Convert number to a byte array that is stored in the i8080 compatible way
+* Right pair of the number first
+*/
+function convertNumberToBytes(number) {
+    if (number > 0xff) {
+        return [number & 0x00FF, (number & 0xFF00) >> 8]
+    }
+    return [number];
+}
+
+/**Convert two bytes of 8bit numbers back into 16bit number */
+function convertBytesToNumber(bytes) {
+    return (bytes[0] << 8) + bytes[1];
+}
+
 function convertTokensToBytes(tokens) {
     let argumentCount = 0;
     for (let i = 1; i < tokens.length; i++) {
@@ -98,15 +113,17 @@ function convertTokensToBytes(tokens) {
         return [Instructions[tokens[0]][tokens[1]][tokens[2]]];
     }
     if (value1IsAName) {
-        return [Instructions[tokens[0]][tokens[1]], value2];
+        return [Instructions[tokens[0]][tokens[1]], convertNumberToBytes(value2)].flat();
     } else {
-        return value1 === undefined ? [Instructions[tokens[0]]] : [Instructions[tokens[0]], value1];
+        return value1 === undefined ? [Instructions[tokens[0]]].flat() : [Instructions[tokens[0]], convertNumberToBytes(value1)].flat();
     }
 }
 
 export function convertTextToCode(text) {
     let program = Array(0xbb0 - 0x800).fill(0);
+    //records places in memory that reference jump labels
     let jumps = {};
+    let unfinishedJumps = [];
     let counter = 0;
     //regular expression that will match every comment on every line
     text = text.replaceAll(/( *)(;)(.*)/g, "");
@@ -117,16 +134,35 @@ export function convertTextToCode(text) {
     for (let line of lines) {
         let labelName = line.match(labelRegEx);
         if (labelName != null) {
-            jumps[labelName[0]] = lineId;
+            jumps[labelName[0]] = counter;
             continue;
         }
         let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
-        let bytes = convertTokensToBytes(tokens);
-        for (let byte of bytes) {
-            program[counter++] = byte;
+        //we have to take special action incase of jump and call instructions because they can accept labels as input 
+        if (JumpInstructions.includes(tokens[0]) && tokens.length === 2) {
+            //jump commands are always excepting one argument so to avoid having label accidentally converted into registry name 
+            program[counter++] = Instructions[tokens[0]];
+            if (tokens[1] in jumps) {
+                let index = convertNumberToBytes(jumps[tokens[1]] + 0x800);
+                program[counter++] = index[0];
+                program[counter++] = index[1];
+            }
+            else {
+                unfinishedJumps.push({ name: tokens[1], location: counter });
+                counter += 2;
+            }
         }
-        console.log(tokens);
-        lineId++;
+        else {
+            let bytes = convertTokensToBytes(tokens);
+            for (let byte of bytes) {
+                program[counter++] = byte;
+            }
+        }
+    }
+    for (let jump of unfinishedJumps) {
+        let location = convertNumberToBytes(0x800 + jumps[jump.name]);
+        program[jump.location] = location[0];
+        program[jump.location + 1] = location[1];
     }
     return program;
 }
@@ -185,6 +221,14 @@ export function executionStep(interpreter) {
             break;
         case Instructions.adi:
             adi(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
+        case Instructions.jmp:
+            //read next 2 bytes
+            let address = [
+                interpreter.memory[++interpreter.programCounter],
+                interpreter.memory[++interpreter.programCounter]
+            ];
+            interpreter.programCounter = convertBytesToNumber(address.reverse()) - 0x800 - 1;
             break;
         //----MOV------
         case 0x40: //mov b,b

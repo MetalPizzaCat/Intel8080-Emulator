@@ -36,7 +36,7 @@ label:
     ;push b
     ;pop d
     ;call func
-    ;jmp label
+    jmp label
     ; :^)
     hlt
     
@@ -54,8 +54,9 @@ label:
 
   /**Convert user's text input into data structure suitable for this program */
   step() {
+    const int = executionStep(this.state.interpreter);
     this.setState(prev => ({
-      interpreter: executionStep(prev.interpreter)
+      interpreter: int
     }));
   }
 

@@ -25,10 +25,19 @@ export const InstructionLengthInfo = {
     "hlt": 0
 }
 
+/**List of instructions that take label as input rather then number or register */
+export const JumpInstructions = [
+    "jmp", "jz", "jnz", "jp", "jm", "jc", "jnc", "jpe", "jpo", "call", "cz", "cp", "cm", "cc", "cnc", "cpe", "cpo"
+]
+
+/**Dictionary of all op codes for instructions available 
+ * It's accessible by "name.register.register"
+*/
 export const Instructions = {
     hlt: 0x76,
     ani: 0xe6,
     adi: 0xc6,
+    jmp: 0xc3,
     mov: {
         b: {
             b: 0x40,
