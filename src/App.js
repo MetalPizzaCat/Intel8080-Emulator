@@ -15,6 +15,7 @@ export default class App extends React.Component {
     this.run = this.run.bind(this);
     this.step = this.step.bind(this);
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
+    this.reset = this.reset.bind(this);
   }
 
   run() {
@@ -23,7 +24,7 @@ export default class App extends React.Component {
 
   /**Convert user code into byte code */
   assemble() {
-    let code = convertTextToCode(`
+    /*let code = convertTextToCode(`
     ;simple test program that
     mvi a,4
 label:
@@ -44,7 +45,8 @@ label:
     func:
     mvi d,23
     ret
-    `);
+    `);*/
+    let code = convertTextToCode(this.state.codeText);
     this.setState(prev => ({
       interpreter: {
         ...prev.interpreter,
@@ -61,16 +63,23 @@ label:
 
   onCodeInputChanged(e) {
     this.setState({
-      codeText: e.value
+      codeText: e.target.value
     });
-    console.log(e.value);
+    console.log(e.target.value);
+  }
+
+  reset() {
+    this.setState({
+      interpreter: new Interpreter()
+    });
   }
 
   render() {
     return <div className="App">
       <div className='Controls'>
-        <button onClick={this.run}>Freeze and die</button>
+        <button onClick={this.run}>Assemble</button>
         <button onClick={this.step}>Step</button>
+        <button onClick={this.reset}>Clear memory</button>
       </div>
       <div className='Editors'>
         <div className='OperationStack'>
