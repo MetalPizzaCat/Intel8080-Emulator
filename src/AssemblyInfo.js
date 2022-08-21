@@ -38,6 +38,8 @@ export const Instructions = {
     ani: 0xe6,
     adi: 0xc6,
     jmp: 0xc3,
+    ret: 0xc9,
+    call: 0xcd,
     mov: {
         b: {
             b: 0x40,

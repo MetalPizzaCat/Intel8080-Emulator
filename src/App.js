@@ -21,6 +21,7 @@ export default class App extends React.Component {
     this.assemble();
   }
 
+  /**Convert user code into byte code */
   assemble() {
     let code = convertTextToCode(`
     ;simple test program that
@@ -35,7 +36,7 @@ label:
     ;sta 0800
     ;push b
     ;pop d
-    ;call func
+    call func
     jmp label
     ; :^)
     hlt
@@ -52,12 +53,10 @@ label:
     }));
   }
 
-  /**Convert user's text input into data structure suitable for this program */
+  /**Step one instruction */
   step() {
     const int = executionStep(this.state.interpreter);
-    this.setState(prev => ({
-      interpreter: int
-    }));
+    this.setState({ interpreter: int });
   }
 
   onCodeInputChanged(e) {
@@ -76,6 +75,9 @@ label:
       <div className='Editors'>
         <div className='OperationStack'>
           {/*all of the operands available */}
+        </div>
+        <div>
+          <p>Address : {this.state.interpreter.programCounter}</p>
         </div>
         <div className='Registers'>
           <RegistersDisplay registers={this.state.interpreter.registry} />

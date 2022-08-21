@@ -97,6 +97,7 @@ function convertBytesToNumber(bytes) {
     return (bytes[0] << 8) + bytes[1];
 }
 
+/**Converts tokens for the line into byte codes for the instruction and the arguments */
 function convertTokensToBytes(tokens) {
     let argumentCount = 0;
     for (let i = 1; i < tokens.length; i++) {
@@ -115,10 +116,28 @@ function convertTokensToBytes(tokens) {
     if (value1IsAName) {
         return [Instructions[tokens[0]][tokens[1]], convertNumberToBytes(value2)].flat();
     } else {
-        return value1 === undefined ? [Instructions[tokens[0]]].flat() : [Instructions[tokens[0]], convertNumberToBytes(value1)].flat();
+        return tokens[1] === undefined ? [Instructions[tokens[0]]].flat() : [Instructions[tokens[0]], convertNumberToBytes(value1)].flat();
     }
 }
 
+function parseJumpInstruction(tokens, location, jumps, unfinishedJumps) {
+    //jump commands are always excepting one argument so to avoid having label accidentally converted into registry name 
+    let result = [];
+    result.push(Instructions[tokens[0]]);
+    if (tokens[1] in jumps) {
+        let index = convertNumberToBytes(jumps[tokens[1]] + 0x800);
+        result.push(index[0]);
+        result.push(index[1]);
+    }
+    else {
+        unfinishedJumps.push({ name: tokens[1], location: location + 1 });
+        result.push(undefined);
+        result.push(undefined);
+    }
+    return result;
+}
+
+/**Convert assembly text code into bytes and return  resulting  memory bank */
 export function convertTextToCode(text) {
     let program = Array(0xbb0 - 0x800).fill(0);
     //records places in memory that reference jump labels
@@ -127,10 +146,8 @@ export function convertTextToCode(text) {
     let counter = 0;
     //regular expression that will match every comment on every line
     text = text.replaceAll(/( *)(;)(.*)/g, "");
-    //const nameRegEx = /[A-z]{3,4}((?=\s+)|$)/;
     const labelRegEx = /[A-z]+(?=:)/;
     let lines = text.split("\n").filter(token => token.match(/^(\s)+$/) == null && token.length > 0);
-    let lineId = 0;
     for (let line of lines) {
         let labelName = line.match(labelRegEx);
         if (labelName != null) {
@@ -139,24 +156,10 @@ export function convertTextToCode(text) {
         }
         let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
         //we have to take special action incase of jump and call instructions because they can accept labels as input 
-        if (JumpInstructions.includes(tokens[0]) && tokens.length === 2) {
-            //jump commands are always excepting one argument so to avoid having label accidentally converted into registry name 
-            program[counter++] = Instructions[tokens[0]];
-            if (tokens[1] in jumps) {
-                let index = convertNumberToBytes(jumps[tokens[1]] + 0x800);
-                program[counter++] = index[0];
-                program[counter++] = index[1];
-            }
-            else {
-                unfinishedJumps.push({ name: tokens[1], location: counter });
-                counter += 2;
-            }
-        }
-        else {
-            let bytes = convertTokensToBytes(tokens);
-            for (let byte of bytes) {
-                program[counter++] = byte;
-            }
+        let isJump = (JumpInstructions.includes(tokens[0]) && tokens.length === 2);
+        let bytes = isJump ? parseJumpInstruction(tokens, counter, jumps, unfinishedJumps) : convertTokensToBytes(tokens);
+        for (let byte of bytes) {
+            program[counter++] = byte;
         }
     }
     for (let jump of unfinishedJumps) {
@@ -223,12 +226,36 @@ export function executionStep(interpreter) {
             adi(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
         case Instructions.jmp:
-            //read next 2 bytes
-            let address = [
-                interpreter.memory[++interpreter.programCounter],
-                interpreter.memory[++interpreter.programCounter]
-            ];
-            interpreter.programCounter = convertBytesToNumber(address.reverse()) - 0x800 - 1;
+            {
+                //read next 2 bytes
+                let address = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ];
+                interpreter.programCounter = convertBytesToNumber(address.reverse()) - 0x800 - 1;
+            }
+            break;
+        case Instructions.call:
+            {
+                let savedAddress = convertNumberToBytes(interpreter.programCounter + 0x800);
+                interpreter.memory[interpreter.stackPointer--] = savedAddress[0];
+                interpreter.memory[interpreter.stackPointer--] = savedAddress[1];
+
+                let address = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ];
+                interpreter.programCounter = convertBytesToNumber(address.reverse()) - 0x800 - 1;
+            }
+            break;
+        case Instructions.ret:
+            {
+                let address = [
+                    interpreter.memory[++interpreter.stackPointer],
+                    interpreter.memory[++interpreter.stackPointer]
+                ];
+                interpreter.programCounter = convertBytesToNumber(address) - 0x800 - 1;
+            }
             break;
         //----MOV------
         case 0x40: //mov b,b
