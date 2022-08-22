@@ -1,5 +1,6 @@
 {
   "name": "emulator",
+  "homepage": "https://metalpizzacat.github.io/pages-test/",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
