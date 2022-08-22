@@ -298,7 +298,6 @@ export function executionStep(interpreter) {
             interpreter.registry.c = interpreter.registry.b;
             break;
         case 0x49: //mov c,c
-            interpreter.registry.c = interpreter.registry.c;
             break;
         case 0x4a: //mov c,d
             interpreter.registry.c = interpreter.registry.d;
@@ -325,7 +324,6 @@ export function executionStep(interpreter) {
             interpreter.registry.d = interpreter.registry.c;
             break;
         case 0x52: //mov d,d
-            interpreter.registry.d = interpreter.registry.d;
             break;
         case 0x53: //mov d,e
             interpreter.registry.d = interpreter.registry.e;
@@ -352,7 +350,6 @@ export function executionStep(interpreter) {
             interpreter.registry.e = interpreter.registry.d;
             break;
         case 0x5b: //mov e,e
-            interpreter.registry.e = interpreter.registry.e;
             break;
         case 0x5c: //mov e,h
             interpreter.registry.e = interpreter.registry.h;
@@ -379,7 +376,6 @@ export function executionStep(interpreter) {
             interpreter.registry.h = interpreter.registry.e;
             break;
         case 0x64: //mov h,h
-            interpreter.registry.h = interpreter.registry.h;
             break;
         case 0x65: //mov h,l
             interpreter.registry.h = interpreter.registry.l;
@@ -406,7 +402,6 @@ export function executionStep(interpreter) {
             interpreter.registry.l = interpreter.registry.h;
             break;
         case 0x6d: //mov l,l
-            interpreter.registry.l = interpreter.registry.l;
             break;
         case 0x6e: //mov l,m
             interpreter.registry.l = interpreter.registry.m;
@@ -431,9 +426,6 @@ export function executionStep(interpreter) {
             break;
         case 0x75: //mov m,l
             interpreter.registry.m = interpreter.registry.l;
-            break;
-        case 0x76: //mov m,m
-            interpreter.registry.m = interpreter.registry.m;
             break;
         case 0x77: //mov m,a
             interpreter.registry.m = interpreter.registry.a;
@@ -460,7 +452,6 @@ export function executionStep(interpreter) {
             interpreter.registry.a = interpreter.registry.m;
             break;
         case 0x7f: //mov a,a
-            interpreter.registry.a = interpreter.registry.a;
             break;
         //------MVI------
         case 0x6: //mvi b,d8
