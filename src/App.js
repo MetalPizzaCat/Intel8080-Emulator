@@ -26,28 +26,6 @@ export default class App extends React.Component {
 
   /**Convert user code into byte code */
   assemble() {
-    /*let code = convertTextToCode(`
-    ;simple test program that
-    mvi a,4
-label:
-    adi 4 ; uwu
-    mov b,a
-    mvi a,255
-    mvi c,90
-    ;apply &
-    ani 240
-    ;sta 0800
-    ;push b
-    ;pop d
-    call func
-    jmp label
-    ; :^)
-    hlt
-    
-    func:
-    mvi d,23
-    ret
-    `);*/
     let code = convertTextToCode(this.state.codeText);
     this.setState(prev => ({
       interpreter: {

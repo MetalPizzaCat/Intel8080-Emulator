@@ -225,6 +225,18 @@ export function executionStep(interpreter) {
         case Instructions.adi:
             adi(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
+        case Instructions.push.b:
+            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.b;
+            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.c;
+            break;
+        case Instructions.push.d:
+            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.d;
+            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.e;
+            break;
+        case Instructions.push.h:
+            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.h;
+            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.l;
+            break;
         case Instructions.jmp:
             {
                 //read next 2 bytes

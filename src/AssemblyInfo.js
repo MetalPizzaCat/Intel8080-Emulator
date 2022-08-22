@@ -40,6 +40,24 @@ export const Instructions = {
     jmp: 0xc3,
     ret: 0xc9,
     call: 0xcd,
+    jz: 0xca,
+    jnz: 0xc2,
+    jp: 0xf2,
+    jm: 0xfa,
+    jc: 0xda,
+    jnc: 0xd2,
+    jpe: 0xea,
+    jpo: 0xe2,
+    push: {
+        b: 0xc5,
+        d: 0xd5,
+        h: 0xf5
+    },
+    pop: {
+        b: 0xc5,
+        d: 0xd5,
+        h: 0xf5
+    },
     mov: {
         b: {
             b: 0x40,
