@@ -16,6 +16,7 @@ export default class App extends React.Component {
     this.step = this.step.bind(this);
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
     this.reset = this.reset.bind(this);
+    this.changeMemoryValue = this.changeMemoryValue.bind(this);
   }
 
   run() {
@@ -74,6 +75,17 @@ label:
     });
   }
 
+  /**Changes value of the memory cell directly
+   * Used for letting user write to memory directly
+  */
+  changeMemoryValue(cell, newValue) {
+    let interpreter = { ...this.state.interpreter };
+    interpreter.memory[cell] = newValue;
+    this.setState({
+      interpreter: interpreter
+    });
+  }
+
   render() {
     return <div className="App">
       <div className='Controls'>
@@ -98,7 +110,7 @@ label:
           <FlagsDisplay flags={this.state.interpreter.flags} />
         </div>
         <div>
-          <MemoryDisplay memory={this.state.interpreter.memory} />
+          <MemoryDisplay changeMemoryValue={this.changeMemoryValue} memory={this.state.interpreter.memory} />
         </div>
         <div>
           <StackDisplay memory={this.state.interpreter.memory} />
