@@ -12,8 +12,8 @@ export default class MemoryDisplay extends React.Component {
         }
     }
     onCellValueUserChanged(e) {
-        if (e.target.value.match(/[0-f]{1,2}/) != null) {
-            let value = parseInt(e.target.value);
+        if (e.target.value.match(/[0-f]{1,2}/) != null || e.target.value.length === 0) {
+            let value = parseInt(e.target.value, 16);
             this.setState({
                 modifiedCellValue: isNaN(value) ? 0 : value
             });
@@ -38,21 +38,15 @@ export default class MemoryDisplay extends React.Component {
             let line = []
             line.push(<td key={i}>{((i * 16) + 0x800).toString(16).padStart(4, '0')}</td>)
             for (let j = 0; j < 16; j++) {
-                if ((i * 16 + j) === this.state.modifiedCell) {
-                    line.push(<td key={i * 16 + j}>
-                        <input className="MemoryCell" size={2} data-cell={i * 16 + j}
-                            onChange={this.onCellValueUserChanged}
-                            onFocus={this.beginCellChange}
-                            onBlur={this.finishCellChange}
-                            value={this.state.modifiedCellValue} />
-                    </td>);
-                }
                 line.push(<td key={i * 16 + j}>
                     <input className="MemoryCell" size={2} data-cell={i * 16 + j}
                         onChange={this.onCellValueUserChanged}
                         onFocus={this.beginCellChange}
-                        value={(this.props.memory[i * 16 + j]).toString(16).padStart(2, '0')} />
+                        onBlur={this.finishCellChange}
+                        value={(((i * 16 + j) === this.state.modifiedCell) ? this.state.modifiedCellValue : (this.props.memory[i * 16 + j])).toString(16)} 
+                        maxLength = "2"/>
                 </td>);
+
             }
             memory.push(<tr key={i}>{line}</tr>)
         }

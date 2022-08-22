@@ -17,6 +17,7 @@ export default class App extends React.Component {
     this.onCodeInputChanged = this.onCodeInputChanged.bind(this);
     this.reset = this.reset.bind(this);
     this.changeMemoryValue = this.changeMemoryValue.bind(this);
+    this.changeRegisterValue = this.changeRegisterValue.bind(this);
   }
 
   run() {
@@ -86,6 +87,14 @@ label:
     });
   }
 
+  changeRegisterValue(register, value) {
+    let interpreter = { ...this.state.interpreter };
+    interpreter.registry[register] = value;
+    this.setState({
+      interpreter: interpreter
+    });
+  }
+
   render() {
     return <div className="App">
       <div className='Controls'>
@@ -101,7 +110,7 @@ label:
           <p>Address : {this.state.interpreter.programCounter}</p>
         </div>
         <div className='Registers'>
-          <RegistersDisplay registers={this.state.interpreter.registry} />
+          <RegistersDisplay onRegisterValueModified={this.changeRegisterValue} registers={this.state.interpreter.registry} />
         </div>
         <div>
           <textarea onChange={this.onCodeInputChanged} />
