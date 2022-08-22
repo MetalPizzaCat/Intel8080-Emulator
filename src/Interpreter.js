@@ -218,12 +218,14 @@ export function executionStep(interpreter) {
         //i generated them via c# script :P
         case 0x76: case 118:
             throw Error("Program exit handling is not implemented");
-            break;
         case 0xe6:
             ani(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
         case Instructions.adi:
             adi(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
+        case Instructions.aci:
+            aci(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
         case Instructions.push.b:
             interpreter.memory[interpreter.stackPointer--] = interpreter.registry.b;
@@ -271,7 +273,6 @@ export function executionStep(interpreter) {
             break;
         //----MOV------
         case 0x40: //mov b,b
-            interpreter.registry.b = interpreter.registry.b;
             break;
         case 0x41: //mov b,c
             interpreter.registry.b = interpreter.registry.c;
