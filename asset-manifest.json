@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/pages-test/static/css/main.729747ea.css",
-    "main.js": "/pages-test/static/js/main.72306d27.js",
-    "static/js/787.09dc29b4.chunk.js": "/pages-test/static/js/787.09dc29b4.chunk.js",
-    "index.html": "/pages-test/index.html",
-    "main.729747ea.css.map": "/pages-test/static/css/main.729747ea.css.map",
-    "main.72306d27.js.map": "/pages-test/static/js/main.72306d27.js.map",
-    "787.09dc29b4.chunk.js.map": "/pages-test/static/js/787.09dc29b4.chunk.js.map"
+    "main.css": "/Intel8080-Emulator/static/css/main.729747ea.css",
+    "main.js": "/Intel8080-Emulator/static/js/main.b5e847a1.js",
+    "static/js/787.09dc29b4.chunk.js": "/Intel8080-Emulator/static/js/787.09dc29b4.chunk.js",
+    "index.html": "/Intel8080-Emulator/index.html",
+    "main.729747ea.css.map": "/Intel8080-Emulator/static/css/main.729747ea.css.map",
+    "main.b5e847a1.js.map": "/Intel8080-Emulator/static/js/main.b5e847a1.js.map",
+    "787.09dc29b4.chunk.js.map": "/Intel8080-Emulator/static/js/787.09dc29b4.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.729747ea.css",
-    "static/js/main.72306d27.js"
+    "static/js/main.b5e847a1.js"
   ]
 }
