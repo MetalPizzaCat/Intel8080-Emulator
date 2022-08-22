@@ -1,6 +1,6 @@
 {
   "name": "emulator",
-  "homepage": "https://metalpizzacat.github.io/pages-test/",
+  "homepage": "https://metalpizzacat.github.io/Intel8080-Emulator/",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
