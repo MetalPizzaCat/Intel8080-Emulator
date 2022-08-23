@@ -21,7 +21,8 @@ export default class MemoryDisplay extends React.Component {
     }
     beginCellChange(e) {
         this.setState({
-            modifiedCell: parseInt(e.target.dataset.cell)
+            modifiedCell: parseInt(e.target.dataset.cell),
+            modifiedCellValue: this.props.memory[parseInt(e.target.dataset.cell)]
         })
     }
     finishCellChange(e) {
@@ -43,8 +44,8 @@ export default class MemoryDisplay extends React.Component {
                         onChange={this.onCellValueUserChanged}
                         onFocus={this.beginCellChange}
                         onBlur={this.finishCellChange}
-                        value={(((i * 16 + j) === this.state.modifiedCell) ? this.state.modifiedCellValue : (this.props.memory[i * 16 + j])).toString(16)} 
-                        maxLength = "2"/>
+                        value={(((i * 16 + j) === this.state.modifiedCell) ? this.state.modifiedCellValue : (this.props.memory[i * 16 + j])).toString(16)}
+                        maxLength="2" />
                 </td>);
 
             }

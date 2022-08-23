@@ -5,6 +5,7 @@
 export const InstructionLengthInfo = {
     "mov": 2,
     "mvi": 2,
+    "lxi": 2,
     "ana": 1,
     "ani": 1,
     "adi": 1,
@@ -20,6 +21,7 @@ export const InstructionLengthInfo = {
     "jc": 1,
     "jnc": 1,
     "push": 1,
+    "lda": 1,
     "pop": 1,
     "call": 1,
     "ret": 0,
@@ -42,6 +44,8 @@ export const Instructions = {
     jmp: 0xc3,
     ret: 0xc9,
     call: 0xcd,
+    lda: 0x3a,
+    sta: 0x32,
     jz: 0xca,
     jnz: 0xc2,
     jp: 0xf2,
@@ -50,6 +54,17 @@ export const Instructions = {
     jnc: 0xd2,
     jpe: 0xea,
     jpo: 0xe2,
+    lxi: {
+        b: 0x01,
+        d: 0x11,
+        h: 0x21,
+        sp: 0x31
+    },
+    ldax: {
+        b: 0x0a,
+        d: 0x1a
+    },
+    lhld: 0x21,
     push: {
         b: 0xc5,
         d: 0xd5,
@@ -161,6 +176,16 @@ export const Instructions = {
         l: 0x85,
         m: 0x86,
         a: 0x87,
+    },
+    adc: {
+        b: 0x88,
+        c: 0x89,
+        d: 0x8a,
+        e: 0x8b,
+        h: 0x8c,
+        l: 0x8d,
+        m: 0x8e,
+        a: 0x8f,
     },
     ana: {
         b: 0xa0,

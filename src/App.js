@@ -87,6 +87,10 @@ export default class App extends React.Component {
         <div>
           <p>Address : {this.state.interpreter.programCounter}</p>
         </div>
+        <div>
+          <p>SP : {(this.state.interpreter.stackPointer + 0x800).toString(16)}</p>
+          <p>PC : {(this.state.interpreter.programCounter + 0x800).toString(16)}</p>
+        </div>
         <div className='Registers'>
           <RegistersDisplay onRegisterValueModified={this.changeRegisterValue} registers={this.state.interpreter.registry} />
         </div>

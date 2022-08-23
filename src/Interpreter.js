@@ -239,6 +239,66 @@ export function executionStep(interpreter) {
             interpreter.memory[interpreter.stackPointer--] = interpreter.registry.h;
             interpreter.memory[interpreter.stackPointer--] = interpreter.registry.l;
             break;
+        case Instructions.lxi.b:
+            {
+                let data = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ].reverse();
+                interpreter.registry.b = data[0];
+                interpreter.registry.c = data[1];
+            }
+            break;
+            case Instructions.lxi.d:
+            {
+                let data = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ].reverse();
+                interpreter.registry.d = data[0];
+                interpreter.registry.e = data[1];
+            }
+            break;
+        case Instructions.lxi.h:
+            {
+                let data = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ].reverse();
+                interpreter.registry.h = data[0];
+                interpreter.registry.l = data[1];
+            }
+            break;
+        case Instructions.lxi.sp:
+            {
+                let data = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ].reverse();
+                let address = convertBytesToNumber(data);
+                interpreter.stackPointer = address - 0x800;
+            }
+            break;
+        case Instructions.sta:
+            {
+                //read next 2 bytes
+                let address = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ];
+                interpreter.memory[convertBytesToNumber(address.reverse()) - 0x800] = interpreter.registry.a;
+            }
+            break;
+        case Instructions.lda:
+            {
+                //read next 2 bytes
+                let address = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ];
+                interpreter.registry.a = interpreter.memory[convertBytesToNumber(address.reverse()) - 0x800];
+            }
+            break;
         case Instructions.jmp:
             {
                 //read next 2 bytes
@@ -271,287 +331,273 @@ export function executionStep(interpreter) {
                 interpreter.programCounter = convertBytesToNumber(address) - 0x800 - 1;
             }
             break;
-        //----MOV------
-        case 0x40: //mov b,b
-            break;
-        case 0x41: //mov b,c
+        //------MOV------
+        case Instructions.mov.b.c: //mov b,c
             interpreter.registry.b = interpreter.registry.c;
             break;
-        case 0x42: //mov b,d
+        case Instructions.mov.b.d: //mov b,d
             interpreter.registry.b = interpreter.registry.d;
             break;
-        case 0x43: //mov b,e
+        case Instructions.mov.b.e: //mov b,e
             interpreter.registry.b = interpreter.registry.e;
             break;
-        case 0x44: //mov b,h
+        case Instructions.mov.b.h: //mov b,h
             interpreter.registry.b = interpreter.registry.h;
             break;
-        case 0x45: //mov b,l
+        case Instructions.mov.b.l: //mov b,l
             interpreter.registry.b = interpreter.registry.l;
             break;
-        case 0x46: //mov b,m
+        case Instructions.mov.b.m: //mov b,m
             interpreter.registry.b = interpreter.registry.m;
             break;
-        case 0x47: //mov b,a
+        case Instructions.mov.b.a: //mov b,a
             interpreter.registry.b = interpreter.registry.a;
             break;
-        case 0x48: //mov c,b
+        case Instructions.mov.c.b: //mov c,b
             interpreter.registry.c = interpreter.registry.b;
             break;
-        case 0x49: //mov c,c
-            break;
-        case 0x4a: //mov c,d
+        case Instructions.mov.c.d: //mov c,d
             interpreter.registry.c = interpreter.registry.d;
             break;
-        case 0x4b: //mov c,e
+        case Instructions.mov.c.e: //mov c,e
             interpreter.registry.c = interpreter.registry.e;
             break;
-        case 0x4c: //mov c,h
+        case Instructions.mov.c.h: //mov c,h
             interpreter.registry.c = interpreter.registry.h;
             break;
-        case 0x4d: //mov c,l
+        case Instructions.mov.c.l: //mov c,l
             interpreter.registry.c = interpreter.registry.l;
             break;
-        case 0x4e: //mov c,m
+        case Instructions.mov.c.m: //mov c,m
             interpreter.registry.c = interpreter.registry.m;
             break;
-        case 0x4f: //mov c,a
+        case Instructions.mov.c.a: //mov c,a
             interpreter.registry.c = interpreter.registry.a;
             break;
-        case 0x50: //mov d,b
+        case Instructions.mov.d.b: //mov d,b
             interpreter.registry.d = interpreter.registry.b;
             break;
-        case 0x51: //mov d,c
+        case Instructions.mov.d.c: //mov d,c
             interpreter.registry.d = interpreter.registry.c;
             break;
-        case 0x52: //mov d,d
-            break;
-        case 0x53: //mov d,e
+        case Instructions.mov.d.e: //mov d,e
             interpreter.registry.d = interpreter.registry.e;
             break;
-        case 0x54: //mov d,h
+        case Instructions.mov.d.h: //mov d,h
             interpreter.registry.d = interpreter.registry.h;
             break;
-        case 0x55: //mov d,l
+        case Instructions.mov.d.l: //mov d,l
             interpreter.registry.d = interpreter.registry.l;
             break;
-        case 0x56: //mov d,m
+        case Instructions.mov.d.m: //mov d,m
             interpreter.registry.d = interpreter.registry.m;
             break;
-        case 0x57: //mov d,a
+        case Instructions.mov.d.a: //mov d,a
             interpreter.registry.d = interpreter.registry.a;
             break;
-        case 0x58: //mov e,b
+        case Instructions.mov.e.b: //mov e,b
             interpreter.registry.e = interpreter.registry.b;
             break;
-        case 0x59: //mov e,c
+        case Instructions.mov.e.c: //mov e,c
             interpreter.registry.e = interpreter.registry.c;
             break;
-        case 0x5a: //mov e,d
+        case Instructions.mov.e.d: //mov e,d
             interpreter.registry.e = interpreter.registry.d;
             break;
-        case 0x5b: //mov e,e
-            break;
-        case 0x5c: //mov e,h
+        case Instructions.mov.e.h: //mov e,h
             interpreter.registry.e = interpreter.registry.h;
             break;
-        case 0x5d: //mov e,l
+        case Instructions.mov.e.l: //mov e,l
             interpreter.registry.e = interpreter.registry.l;
             break;
-        case 0x5e: //mov e,m
+        case Instructions.mov.e.m: //mov e,m
             interpreter.registry.e = interpreter.registry.m;
             break;
-        case 0x5f: //mov e,a
+        case Instructions.mov.e.a: //mov e,a
             interpreter.registry.e = interpreter.registry.a;
             break;
-        case 0x60: //mov h,b
+        case Instructions.mov.h.b: //mov h,b
             interpreter.registry.h = interpreter.registry.b;
             break;
-        case 0x61: //mov h,c
+        case Instructions.mov.h.c: //mov h,c
             interpreter.registry.h = interpreter.registry.c;
             break;
-        case 0x62: //mov h,d
+        case Instructions.mov.h.d: //mov h,d
             interpreter.registry.h = interpreter.registry.d;
             break;
-        case 0x63: //mov h,e
+        case Instructions.mov.h.e: //mov h,e
             interpreter.registry.h = interpreter.registry.e;
             break;
-        case 0x64: //mov h,h
-            break;
-        case 0x65: //mov h,l
+        case Instructions.mov.h.l: //mov h,l
             interpreter.registry.h = interpreter.registry.l;
             break;
-        case 0x66: //mov h,m
+        case Instructions.mov.h.m: //mov h,m
             interpreter.registry.h = interpreter.registry.m;
             break;
-        case 0x67: //mov h,a
+        case Instructions.mov.h.a: //mov h,a
             interpreter.registry.h = interpreter.registry.a;
             break;
-        case 0x68: //mov l,b
+        case Instructions.mov.l.b: //mov l,b
             interpreter.registry.l = interpreter.registry.b;
             break;
-        case 0x69: //mov l,c
+        case Instructions.mov.l.c: //mov l,c
             interpreter.registry.l = interpreter.registry.c;
             break;
-        case 0x6a: //mov l,d
+        case Instructions.mov.l.d: //mov l,d
             interpreter.registry.l = interpreter.registry.d;
             break;
-        case 0x6b: //mov l,e
+        case Instructions.mov.l.e: //mov l,e
             interpreter.registry.l = interpreter.registry.e;
             break;
-        case 0x6c: //mov l,h
+        case Instructions.mov.l.h: //mov l,h
             interpreter.registry.l = interpreter.registry.h;
             break;
-        case 0x6d: //mov l,l
-            break;
-        case 0x6e: //mov l,m
+        case Instructions.mov.l.m: //mov l,m
             interpreter.registry.l = interpreter.registry.m;
             break;
-        case 0x6f: //mov l,a
+        case Instructions.mov.l.a: //mov l,a
             interpreter.registry.l = interpreter.registry.a;
             break;
-        case 0x70: //mov m,b
+        case Instructions.mov.m.b: //mov m,b
             interpreter.registry.m = interpreter.registry.b;
             break;
-        case 0x71: //mov m,c
+        case Instructions.mov.m.c: //mov m,c
             interpreter.registry.m = interpreter.registry.c;
             break;
-        case 0x72: //mov m,d
+        case Instructions.mov.m.d: //mov m,d
             interpreter.registry.m = interpreter.registry.d;
             break;
-        case 0x73: //mov m,e
+        case Instructions.mov.m.e: //mov m,e
             interpreter.registry.m = interpreter.registry.e;
             break;
-        case 0x74: //mov m,h
+        case Instructions.mov.m.h: //mov m,h
             interpreter.registry.m = interpreter.registry.h;
             break;
-        case 0x75: //mov m,l
+        case Instructions.mov.m.l: //mov m,l
             interpreter.registry.m = interpreter.registry.l;
             break;
-        case 0x77: //mov m,a
+        case Instructions.mov.m.a: //mov m,a
             interpreter.registry.m = interpreter.registry.a;
             break;
-        case 0x78: //mov a,b
+        case Instructions.mov.a.b: //mov a,b
             interpreter.registry.a = interpreter.registry.b;
             break;
-        case 0x79: //mov a,c
+        case Instructions.mov.a.c: //mov a,c
             interpreter.registry.a = interpreter.registry.c;
             break;
-        case 0x7a: //mov a,d
+        case Instructions.mov.a.d: //mov a,d
             interpreter.registry.a = interpreter.registry.d;
             break;
-        case 0x7b: //mov a,e
+        case Instructions.mov.a.e: //mov a,e
             interpreter.registry.a = interpreter.registry.e;
             break;
-        case 0x7c: //mov a,h
+        case Instructions.mov.a.h: //mov a,h
             interpreter.registry.a = interpreter.registry.h;
             break;
-        case 0x7d: //mov a,l
+        case Instructions.mov.a.l: //mov a,l
             interpreter.registry.a = interpreter.registry.l;
             break;
-        case 0x7e: //mov a,m
+        case Instructions.mov.a.m: //mov a,m
             interpreter.registry.a = interpreter.registry.m;
             break;
-        case 0x7f: //mov a,a
-            break;
         //------MVI------
-        case 0x6: //mvi b,d8
+        case Instructions.mvi.b: //mvi b,d8
             interpreter.registry.b = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0xe: //mvi c,d8
+        case Instructions.mvi.c: //mvi c,d8
             interpreter.registry.c = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0x16: //mvi d,d8
+        case Instructions.mvi.d: //mvi d,d8
             interpreter.registry.d = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0x1e: //mvi e,d8
+        case Instructions.mvi.e: //mvi e,d8
             interpreter.registry.e = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0x26: //mvi h,d8
+        case Instructions.mvi.h: //mvi h,d8
             interpreter.registry.h = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0x2e: //mvi l,d8
+        case Instructions.mvi.l: //mvi l,d8
             interpreter.registry.l = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0x36: //mvi m,d8
+        case Instructions.mvi.m: //mvi m,d8
             interpreter.registry.m = interpreter.memory[++interpreter.programCounter];
             break;
-        case 0x3e: //mvi a,d8
+        case Instructions.mvi.a: //mvi a,d8
             interpreter.registry.a = interpreter.memory[++interpreter.programCounter];
             break;
         //------ADD------
-        case 0x80: //add b
+        case Instructions.add.b: //add b
             add(interpreter, 'b');
             break;
-        case 0x81: //add c
+        case Instructions.add.c: //add c
             add(interpreter, 'c');
             break;
-        case 0x82: //add d
+        case Instructions.add.d: //add d
             add(interpreter, 'd');
             break;
-        case 0x83: //add e
+        case Instructions.add.e: //add e
             add(interpreter, 'e');
             break;
-        case 0x84: //add h
+        case Instructions.add.h: //add h
             add(interpreter, 'h');
             break;
-        case 0x85: //add l
+        case Instructions.add.l: //add l
             add(interpreter, 'l');
             break;
-        case 0x86: //add m
+        case Instructions.add.m: //add m
             add(interpreter, 'm');
             break;
-        case 0x87: //add a
+        case Instructions.add.a: //add a
             add(interpreter, 'a');
             break;
         //------ADC------
-        case 0x88: //adc b
+        case Instructions.adc.b: //adc b
             adc(interpreter, 'b');
             break;
-        case 0x89: //adc c
+        case Instructions.adc.c: //adc c
             adc(interpreter, 'c');
             break;
-        case 0x8a: //adc d
+        case Instructions.adc.d: //adc d
             adc(interpreter, 'd');
             break;
-        case 0x8b: //adc e
+        case Instructions.adc.e: //adc e
             adc(interpreter, 'e');
             break;
-        case 0x8c: //adc h
+        case Instructions.adc.h: //adc h
             adc(interpreter, 'h');
             break;
-        case 0x8d: //adc l
+        case Instructions.adc.l: //adc l
             adc(interpreter, 'l');
             break;
-        case 0x8e: //adc m
+        case Instructions.adc.m: //adc m
             adc(interpreter, 'm');
             break;
-        case 0x8f: //adc a
+        case Instructions.adc.a: //adc a
             adc(interpreter, 'a');
             break;
         //------ANA------
-        case 0xa0: //ana b
+        case Instructions.ana.b: //ana b
             ana(interpreter, 'b');
             break;
-        case 0xa1: //ana c
+        case Instructions.ana.c: //ana c
             ana(interpreter, 'c');
             break;
-        case 0xa2: //ana d
+        case Instructions.ana.d: //ana d
             ana(interpreter, 'd');
             break;
-        case 0xa3: //ana e
+        case Instructions.ana.e: //ana e
             ana(interpreter, 'e');
             break;
-        case 0xa4: //ana h
+        case Instructions.ana.h: //ana h
             ana(interpreter, 'h');
             break;
-        case 0xa5: //ana l
+        case Instructions.ana.l: //ana l
             ana(interpreter, 'l');
             break;
-        case 0xa6: //ana m
+        case Instructions.ana.m: //ana m
             ana(interpreter, 'm');
             break;
-        case 0xa7: //ana a
+        case Instructions.ana.a: //ana a
             ana(interpreter, 'a');
             break;
         default:
