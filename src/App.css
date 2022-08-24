@@ -9,6 +9,72 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
-.Editors{
+
+.Editors {
   display: flex;
+}
+
+.Error {
+  background-color: rgb(167, 8, 8);
+  font-size: medium;
+}
+
+.CodeEditor {
+  font-size: large;
+  font-family: 'Courier New', Courier, monospace;
+  line-height: 21px;
+  border-radius: 2px;
+  min-width: 300px;
+  max-width: 300px;
+  min-height: 300px;
+  border: 0;
+  padding: 0;
+  outline: none;
+}
+
+.CodeEditorBlock {
+  display: inline-flex;
+  font-size: large;
+  line-height: 21px;
+  gap: 10px;
+
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.CodeEditorLineNumbers {
+  text-align: right;
+
+}
+
+.CodeEditorLineNumbers span {
+  counter-increment: line;
+
+}
+
+.CodeEditorLineNumbers span::before {
+  content: counter(line);
+  display: block;
+}
+
+.Code {
+  overflow-y: scroll;
+  max-height: 600px;
+}
+
+.Memory {
+  display: inline-flex;
+}
+
+.IntermediateInfo {
+  display: inline-flex;
+ 
+}
+
+.ErrorBlockName{
+  text-align: left;
+  
+}
+
+.InfoBlock{
+  background-color: rgb(78, 88, 121);
 }

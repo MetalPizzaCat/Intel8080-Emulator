@@ -10,7 +10,10 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      interpreter: new Interpreter()
+      interpreter: new Interpreter(),
+      /**Errors that occurred during assembly process */
+      assemblyErrors: [],
+      lineNumbers: []
     };
     this.run = this.run.bind(this);
     this.step = this.step.bind(this);
@@ -18,6 +21,7 @@ export default class App extends React.Component {
     this.reset = this.reset.bind(this);
     this.changeMemoryValue = this.changeMemoryValue.bind(this);
     this.changeRegisterValue = this.changeRegisterValue.bind(this);
+    this.resetCounters = this.resetCounters.bind(this);
   }
 
   run() {
@@ -27,25 +31,32 @@ export default class App extends React.Component {
   /**Convert user code into byte code */
   assemble() {
     let code = convertTextToCode(this.state.codeText);
+    let errorMessages = [];
+    code.errors.forEach(error => {
+      errorMessages.push(<p className='Error' key={error.line}>{"Line " + (error.line + 1).toString() + ". " + error.error}</p>);
+    });
     this.setState(prev => ({
       interpreter: {
         ...prev.interpreter,
-        memory: code
-      }
+        memory: code.program
+      },
+      errors: errorMessages
     }));
   }
 
   /**Step one instruction */
   step() {
-    const int = executionStep(this.state.interpreter);
-    this.setState({ interpreter: int });
+    if (!this.state.interpreter.finishedExecution) {
+      const int = executionStep(this.state.interpreter);
+      this.setState({ interpreter: int });
+    }
   }
 
   onCodeInputChanged(e) {
     this.setState({
-      codeText: e.target.value
+      codeText: e.target.value,
+      lineNumbers: Array(e.target.value.split('\n').length).fill(<span></span>)
     });
-    console.log(e.target.value);
   }
 
   reset() {
@@ -73,38 +84,66 @@ export default class App extends React.Component {
     });
   }
 
+  resetCounters() {
+    let interpreter = { ...this.state.interpreter };
+    interpreter.stackPointer = 0xbb0 - 0x800;
+    interpreter.programCounter = 0;
+    interpreter.finishedExecution = false;
+    interpreter.registry = {
+      a: 0,
+      b: 0,
+      c: 0,
+      d: 0,
+      e: 0,
+      h: 0,
+      l: 0
+    };
+    this.setState({
+      interpreter: interpreter
+    });
+  }
   render() {
     return <div className="App">
       <div className='Controls'>
         <button onClick={this.run}>Assemble</button>
         <button onClick={this.step}>Step</button>
         <button onClick={this.reset}>Clear memory</button>
+        <button onClick={this.resetCounters}>Reset counters</button>
       </div>
       <div className='Editors'>
-        <div className='OperationStack'>
-          {/*all of the operands available */}
-        </div>
         <div>
-          <p>Address : {this.state.interpreter.programCounter}</p>
+          <p>Code editor: </p>
+          <div className='Code'>
+            <div className='CodeEditorBlock'>
+              <div className='CodeEditorLineNumbers'>
+                {this.state.lineNumbers}
+              </div>
+              <textarea className='CodeEditor' onChange={this.onCodeInputChanged} />
+            </div>
+          </div>
+          <p className='ErrorBlockName'>Errors: </p>
+          <div className='Errors'>
+            {this.state.errors}
+          </div>
         </div>
-        <div>
-          <p>SP : {(this.state.interpreter.stackPointer + 0x800).toString(16)}</p>
-          <p>PC : {(this.state.interpreter.programCounter + 0x800).toString(16)}</p>
-        </div>
-        <div className='Registers'>
-          <RegistersDisplay onRegisterValueModified={this.changeRegisterValue} registers={this.state.interpreter.registry} />
-        </div>
-        <div>
-          <textarea onChange={this.onCodeInputChanged} />
-        </div>
-        <div>
-          <FlagsDisplay flags={this.state.interpreter.flags} />
-        </div>
-        <div>
-          <MemoryDisplay changeMemoryValue={this.changeMemoryValue} programCounter={this.state.interpreter.programCounter} memory={this.state.interpreter.memory} />
-        </div>
-        <div>
-          <StackDisplay memory={this.state.interpreter.memory} />
+        <div className='InfoBlock'>
+          <div className='IntermediateInfo'>
+            <FlagsDisplay flags={this.state.interpreter.flags} />
+            <RegistersDisplay className='Registers'
+              onRegisterValueModified={this.changeRegisterValue}
+              registers={this.state.interpreter.registry} />
+          </div>
+          <div>
+            <p>Processor counters</p>
+            <span>SP : {(this.state.interpreter.stackPointer + 0x800).toString(16) + " | "}</span>
+            <span>PC : {(this.state.interpreter.programCounter + 0x800).toString(16)}</span>
+          </div>
+
+          <div className='Memory'>
+            <MemoryDisplay changeMemoryValue={this.changeMemoryValue} programCounter={this.state.interpreter.programCounter} memory={this.state.interpreter.memory} />
+            <StackDisplay memory={this.state.interpreter.memory}
+              stackPointer={this.state.interpreter.stackPointer} />
+          </div>
         </div>
       </div>
     </div>

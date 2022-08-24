@@ -3,6 +3,7 @@ import React from "react"
 export default class FlagsDisplay extends React.Component {
     render() {
         return <div>
+            <p>Processor flags</p>
             <table>
                 <thead>
                     <tr>

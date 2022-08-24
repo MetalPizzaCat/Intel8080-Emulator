@@ -1,14 +1,33 @@
 .Stack {
     background-color: rgb(67, 94, 25);
+    overflow-y: scroll;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: large;
+    line-height: 10%;
+    text-align: left;
+    max-height: 600px;
 }
 
 .Memory {
     background-color: rgb(78, 88, 121);
+    overflow-y: scroll;
+    max-height: 600px;
 }
 
-.MemoryCell {
-    
+.Memory th {
+    position: sticky;
+    top: 0;
+    background-color: rgb(78, 88, 121);
 }
-.CurrentCell{
+
+.MemoryCell {}
+
+.CurrentCell {
     background-color: green;
+}
+
+.MemoryTableBody {}
+
+.Registers {
+    display: inline-flex;
 }

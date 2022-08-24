@@ -39,7 +39,7 @@ export default class MemoryDisplay extends React.Component {
             let line = []
             line.push(<td key={i}>{((i * 16) + 0x800).toString(16).padStart(4, '0')}</td>)
             for (let j = 0; j < 16; j++) {
-                line.push(<td key={i * 16 + j}>
+                line.push(<td key={"cell_" + (i * 16 + j).toString()}>
                     <input className={(i * 16 + j) === this.props.programCounter ? "CurrentCell" : "MemoryCell"} size={2} data-cell={i * 16 + j}
                         onChange={this.onCellValueUserChanged}
                         onFocus={this.beginCellChange}
@@ -53,26 +53,30 @@ export default class MemoryDisplay extends React.Component {
         }
         return <div className="Memory">
             <table>
-                <tr>
-                    <th>Address</th>
-                    <th>0</th>
-                    <th>1</th>
-                    <th>2</th>
-                    <th>3</th>
-                    <th>4</th>
-                    <th>5</th>
-                    <th>6</th>
-                    <th>7</th>
-                    <th>8</th>
-                    <th>9</th>
-                    <th>A</th>
-                    <th>B</th>
-                    <th>C</th>
-                    <th>D</th>
-                    <th>E</th>
-                    <th>F</th>
-                </tr>
-                {memory}
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>0</th>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                        <th>5</th>
+                        <th>6</th>
+                        <th>7</th>
+                        <th>8</th>
+                        <th>9</th>
+                        <th>A</th>
+                        <th>B</th>
+                        <th>C</th>
+                        <th>D</th>
+                        <th>E</th>
+                        <th>F</th>
+                    </tr>
+                </thead>
+                <tbody className="MemoryTableBody">
+                    {memory}
+                </tbody>
             </table>
         </div>
     }

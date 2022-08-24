@@ -1,5 +1,5 @@
 import React from "react";
-
+import './Display.css'
 export default class RegistersDisplay extends React.Component {
     constructor(props) {
         super(props);
@@ -35,7 +35,7 @@ export default class RegistersDisplay extends React.Component {
     render() {
         let registry = [];
         for (const [key, value] of Object.entries(this.props.registers)) {
-            registry.push(<div>{key}
+            registry.push(<div key={key}>{key}
                 <input size={2}
                     key={key}
                     data-registry={key}
@@ -46,6 +46,11 @@ export default class RegistersDisplay extends React.Component {
                     maxLength="2" />
             </div>);
         }
-        return <div>{registry}</div>
+        return <div >
+            <p>Register values</p>
+            <div className="Registers">
+                {registry}
+            </div>
+        </div>
     }
 }

@@ -43,6 +43,7 @@ export default class Interpreter {
             h: 0,
             l: 0
         };
+        this.finishedExecution = false;
     }
 }
 
@@ -103,6 +104,9 @@ function convertTokensToBytes(tokens) {
     for (let i = 1; i < tokens.length; i++) {
         argumentCount += (tokens[i] !== undefined ? 1 : 0);
     }
+    if (!(tokens[0] in Instructions)) {
+        throw Error("Unknown instruction");
+    }
     if (argumentCount !== InstructionLengthInfo[tokens[0]]) {
         throw Error("Invalid number of arguments");
     }
@@ -143,31 +147,47 @@ export function convertTextToCode(text) {
     //records places in memory that reference jump labels
     let jumps = {};
     let unfinishedJumps = [];
+    let errors = [];
     let counter = 0;
+    let lineCounter = 0;
     //regular expression that will match every comment on every line
     text = text.replaceAll(/( *)(;)(.*)/g, "");
     const labelRegEx = /[A-z]+(?=:)/;
-    let lines = text.split("\n").filter(token => token.match(/^(\s)+$/) == null && token.length > 0);
+    let lines = text.split("\n");
     for (let line of lines) {
-        let labelName = line.match(labelRegEx);
-        if (labelName != null) {
-            jumps[labelName[0]] = counter;
-            continue;
+        try {
+            if (line.match(/^(\s)+$/) != null || line.length === 0) {
+                lineCounter++;
+                continue;
+            }
+            let labelName = line.match(labelRegEx);
+            if (labelName != null) {
+                jumps[labelName[0]] = counter;
+                lineCounter++;
+                continue;
+            }
+
+            let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
+            //we have to take special action incase of jump and call instructions because they can accept labels as input 
+            let isJump = (JumpInstructions.includes(tokens[0]) && tokens.length === 2);
+            let bytes = isJump ? parseJumpInstruction(tokens, counter, jumps, unfinishedJumps) : convertTokensToBytes(tokens);
+            for (let byte of bytes) {
+                program[counter++] = byte;
+            }
+        } catch (err) {
+            errors.push({
+                line: lineCounter,
+                error: err.message
+            });
         }
-        let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
-        //we have to take special action incase of jump and call instructions because they can accept labels as input 
-        let isJump = (JumpInstructions.includes(tokens[0]) && tokens.length === 2);
-        let bytes = isJump ? parseJumpInstruction(tokens, counter, jumps, unfinishedJumps) : convertTokensToBytes(tokens);
-        for (let byte of bytes) {
-            program[counter++] = byte;
-        }
+        lineCounter++;
     }
     for (let jump of unfinishedJumps) {
         let location = convertNumberToBytes(0x800 + jumps[jump.name]);
         program[jump.location] = location[0];
         program[jump.location + 1] = location[1];
     }
-    return program;
+    return { program: program, errors: errors };
 }
 
 function add(interpreter, value) {
@@ -217,7 +237,7 @@ export function executionStep(interpreter) {
     switch (opByte) {
         //i generated them via c# script :P
         case 0x76: case 118:
-            throw Error("Program exit handling is not implemented");
+            interpreter.finishedExecution = true;
         case 0xe6:
             ani(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
