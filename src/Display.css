@@ -9,3 +9,6 @@
 .MemoryCell {
     
 }
+.CurrentCell{
+    background-color: green;
+}

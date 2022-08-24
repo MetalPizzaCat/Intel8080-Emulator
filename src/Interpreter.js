@@ -249,7 +249,7 @@ export function executionStep(interpreter) {
                 interpreter.registry.c = data[1];
             }
             break;
-            case Instructions.lxi.d:
+        case Instructions.lxi.d:
             {
                 let data = [
                     interpreter.memory[++interpreter.programCounter],
@@ -278,6 +278,32 @@ export function executionStep(interpreter) {
                 let address = convertBytesToNumber(data);
                 interpreter.stackPointer = address - 0x800;
             }
+            break;
+        case Instructions.lhld:
+            {
+                let bytes = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ].reverse();
+                let address = convertBytesToNumber(bytes) - 0x800;
+                interpreter.registry.h = interpreter.memory[address + 1];
+                interpreter.registry.l = interpreter.memory[address];
+            }
+            break;
+        case Instructions.shld:
+            {
+                let bytes = [
+                    interpreter.memory[++interpreter.programCounter],
+                    interpreter.memory[++interpreter.programCounter]
+                ].reverse();
+                let address = convertBytesToNumber(bytes) - 0x800;
+                interpreter.memory[address + 1] = interpreter.registry.h;
+                interpreter.memory[address] = interpreter.registry.l;
+            }
+            break;
+        case Instructions.xchg:
+            [interpreter.registry.h, interpreter.registry.d] = [interpreter.registry.d, interpreter.registry.h];
+            [interpreter.registry.l, interpreter.registry.e] = [interpreter.registry.e, interpreter.registry.l];
             break;
         case Instructions.sta:
             {

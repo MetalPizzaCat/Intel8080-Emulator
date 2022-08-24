@@ -24,7 +24,12 @@ export const InstructionLengthInfo = {
     "lda": 1,
     "pop": 1,
     "call": 1,
+    "lhld": 1,
+    "shld" : 1,
+    "xthl": 0,
+    "pchl": 0,
     "ret": 0,
+    "xchg": 0,
     "hlt": 0
 }
 
@@ -54,6 +59,10 @@ export const Instructions = {
     jnc: 0xd2,
     jpe: 0xea,
     jpo: 0xe2,
+    xchg: 0x3b,
+    xthl: 0xe3,
+    pchl: 0xe9,
+    shld: 0x22,
     lxi: {
         b: 0x01,
         d: 0x11,
@@ -64,7 +73,7 @@ export const Instructions = {
         b: 0x0a,
         d: 0x1a
     },
-    lhld: 0x21,
+    lhld: 0x2a,
     push: {
         b: 0xc5,
         d: 0xd5,

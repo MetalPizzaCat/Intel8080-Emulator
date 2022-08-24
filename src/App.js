@@ -101,7 +101,7 @@ export default class App extends React.Component {
           <FlagsDisplay flags={this.state.interpreter.flags} />
         </div>
         <div>
-          <MemoryDisplay changeMemoryValue={this.changeMemoryValue} memory={this.state.interpreter.memory} />
+          <MemoryDisplay changeMemoryValue={this.changeMemoryValue} programCounter={this.state.interpreter.programCounter} memory={this.state.interpreter.memory} />
         </div>
         <div>
           <StackDisplay memory={this.state.interpreter.memory} />

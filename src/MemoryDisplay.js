@@ -40,7 +40,7 @@ export default class MemoryDisplay extends React.Component {
             line.push(<td key={i}>{((i * 16) + 0x800).toString(16).padStart(4, '0')}</td>)
             for (let j = 0; j < 16; j++) {
                 line.push(<td key={i * 16 + j}>
-                    <input className="MemoryCell" size={2} data-cell={i * 16 + j}
+                    <input className={(i * 16 + j) === this.props.programCounter ? "CurrentCell" : "MemoryCell"} size={2} data-cell={i * 16 + j}
                         onChange={this.onCellValueUserChanged}
                         onFocus={this.beginCellChange}
                         onBlur={this.finishCellChange}
