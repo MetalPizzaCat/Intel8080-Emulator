@@ -238,6 +238,7 @@ export function executionStep(interpreter) {
         //i generated them via c# script :P
         case 0x76: case 118:
             interpreter.finishedExecution = true;
+            break;
         case 0xe6:
             ani(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
