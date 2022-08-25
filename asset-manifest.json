@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/Intel8080-Emulator/static/css/main.e7534756.css",
-    "main.js": "/Intel8080-Emulator/static/js/main.522c6944.js",
+    "main.js": "/Intel8080-Emulator/static/js/main.a8bec947.js",
     "static/js/787.09dc29b4.chunk.js": "/Intel8080-Emulator/static/js/787.09dc29b4.chunk.js",
     "index.html": "/Intel8080-Emulator/index.html",
     "main.e7534756.css.map": "/Intel8080-Emulator/static/css/main.e7534756.css.map",
-    "main.522c6944.js.map": "/Intel8080-Emulator/static/js/main.522c6944.js.map",
+    "main.a8bec947.js.map": "/Intel8080-Emulator/static/js/main.a8bec947.js.map",
     "787.09dc29b4.chunk.js.map": "/Intel8080-Emulator/static/js/787.09dc29b4.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e7534756.css",
-    "static/js/main.522c6944.js"
+    "static/js/main.a8bec947.js"
   ]
 }
