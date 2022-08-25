@@ -97,7 +97,7 @@ function sub(interpreter, value) {
 }
 
 function sbb(interpreter, value) {
-    let result = interpreter.registry.a + interpreter.registry[value] + (interpreter.flags.c ? 1 : 0);
+    let result = interpreter.registry.a - interpreter.registry[value] - (interpreter.flags.c ? 1 : 0);
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
