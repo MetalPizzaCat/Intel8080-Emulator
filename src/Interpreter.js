@@ -3,7 +3,7 @@
  * However the reason why functions are extracted and called with interpreter as argument is to make it easier to use with React's states
  */
 
-import { InstructionLengthInfo, Instructions, JumpInstructions } from "./AssemblyInfo";
+import { Instructions } from "./AssemblyInfo";
 import { convertNumberToBytes, convertBytesToNumber } from './Helpers';
 
 /**Class that stores all of the processor related info */
@@ -90,6 +90,18 @@ function add(interpreter, value) {
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
 
+function sub(interpreter, value) {
+    let result = interpreter.registry.a - interpreter.registry[value];
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+
+function sbb(interpreter, value) {
+    let result = interpreter.registry.a + interpreter.registry[value] + (interpreter.flags.c ? 1 : 0);
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+
 function adi(interpreter, value) {
     let result = interpreter.registry.a + value;
     interpreter.flags = checkFlags(result);
@@ -126,6 +138,26 @@ function ani(interpreter, value) {
     interpreter.flags = flags;
 }
 
+function dcr(interpreter, name) {
+    interpreter.registry[name]--;
+    interpreter.registry[name] &= 0xFF;//to clean bits that don't fit in the memory cell
+}
+
+function inr(interpreter, name) {
+    interpreter.registry[name]++;
+    interpreter.registry[name] &= 0xFF;//to clean bits that don't fit in the memory cell
+}
+
+function ora(interpreter, value) {
+    let result = interpreter.registry.a | interpreter.registry[value];
+    let flags = checkFlags(result);
+    //Carry bit must be reset according to documentation
+    flags.c = false;
+    interpreter.registry.a = result;
+    interpreter.flags = flags;
+}
+
+
 /**Reads next 16bites of data */
 function readWord(interpreter) {
     return [
@@ -150,10 +182,40 @@ export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
         //i generated them via c# script :P
-        case 0x76: case 118:
+        case Instructions.hlt: case 118:
             interpreter.finishedExecution = true;
             break;
-        case 0xe6:
+        case Instructions.ral:
+            {
+                let temp = interpreter.registry.a;
+                let msb = interpreter.registry.a >> 7;
+                interpreter.registry.a = ((temp << 1) | (interpreter.flags.c)) & 0xff;
+                interpreter.flags.c = msb;
+            }
+            break;
+        case Instructions.rar:
+            {
+                let temp = interpreter.registry.a;
+                let msb = (interpreter.registry.a >> 7) << 7;
+                interpreter.registry.a = ((temp >> 1) | (msb)) & 0xff;
+                interpreter.flags.c = (temp << 7) >> 7;
+            }
+            break;
+        case Instructions.rlc:
+            {
+                let temp = interpreter.registry.a;
+                interpreter.registry.a = ((temp << 1) | (temp >> 7)) & 0xff;;
+                interpreter.flags.c = (temp >> 7) > 0;
+            }
+            break;
+        case Instructions.rrc:
+            {
+                let temp = interpreter.registry.a;
+                interpreter.registry.a = ((temp >> 1) | (temp << 7)) & 0xff;
+                interpreter.flags.c = (interpreter.registry.a >> 7) > 0;
+            }
+            break;
+        case Instructions.ani:
             ani(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
         case Instructions.adi:
@@ -508,6 +570,91 @@ export function executionStep(interpreter) {
             break;
         case Instructions.ana.a: //ana a
             ana(interpreter, 'a');
+            break;
+        //------DCR------
+        case Instructions.dcr.b: dcr(interpreter, 'b');
+            break;
+        case Instructions.dcr.c: dcr(interpreter, 'c');
+            break;
+        case Instructions.dcr.d: dcr(interpreter, 'd');
+            break;
+        case Instructions.dcr.e: dcr(interpreter, 'e');
+            break;
+        case Instructions.dcr.h: dcr(interpreter, 'h');
+            break;
+        case Instructions.dcr.l: dcr(interpreter, 'l');
+            break;
+        case Instructions.dcr.m: dcr(interpreter, 'm');
+            break;
+        case Instructions.dcr.a: dcr(interpreter, 'a');
+            break;
+        //------INR------
+        case Instructions.inr.b: inr(interpreter, 'b');
+            break;
+        case Instructions.inr.c: inr(interpreter, 'c');
+            break;
+        case Instructions.inr.d: inr(interpreter, 'd');
+            break;
+        case Instructions.inr.e: inr(interpreter, 'e');
+            break;
+        case Instructions.inr.h: inr(interpreter, 'h');
+            break;
+        case Instructions.inr.l: inr(interpreter, 'l');
+            break;
+        case Instructions.inr.m: inr(interpreter, 'm');
+            break;
+        case Instructions.inr.a: inr(interpreter, 'a');
+            break;
+        //------ORA------
+        case Instructions.ora.b: ora(interpreter, 'b');
+            break;
+        case Instructions.ora.c: ora(interpreter, 'c');
+            break;
+        case Instructions.ora.d: ora(interpreter, 'd');
+            break;
+        case Instructions.ora.e: ora(interpreter, 'e');
+            break;
+        case Instructions.ora.h: ora(interpreter, 'h');
+            break;
+        case Instructions.ora.l: ora(interpreter, 'l');
+            break;
+        case Instructions.ora.m: ora(interpreter, 'm');
+            break;
+        case Instructions.ora.a: ora(interpreter, 'a');
+            break;
+        //------SUB------
+        case Instructions.sub.b: sub(interpreter, 'b');
+            break;
+        case Instructions.sub.c: sub(interpreter, 'c');
+            break;
+        case Instructions.sub.d: sub(interpreter, 'd');
+            break;
+        case Instructions.sub.e: sub(interpreter, 'e');
+            break;
+        case Instructions.sub.h: sub(interpreter, 'h');
+            break;
+        case Instructions.sub.l: sub(interpreter, 'l');
+            break;
+        case Instructions.sub.m: sub(interpreter, 'm');
+            break;
+        case Instructions.sub.a: sub(interpreter, 'a');
+            break;
+        //------SBB------
+        case Instructions.sbb.b: sbb(interpreter, 'b');
+            break;
+        case Instructions.sbb.c: sbb(interpreter, 'c');
+            break;
+        case Instructions.sbb.d: sbb(interpreter, 'd');
+            break;
+        case Instructions.sbb.e: sbb(interpreter, 'e');
+            break;
+        case Instructions.sbb.h: sbb(interpreter, 'h');
+            break;
+        case Instructions.sbb.l: sbb(interpreter, 'l');
+            break;
+        case Instructions.sbb.m: sbb(interpreter, 'm');
+            break;
+        case Instructions.sbb.a: sbb(interpreter, 'a');
             break;
         default:
             throw Error("Unrecognized byte code");

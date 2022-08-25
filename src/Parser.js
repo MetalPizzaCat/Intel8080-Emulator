@@ -21,7 +21,9 @@ function convertTokensToBytes(tokens) {
         return [Instructions[tokens[0]][tokens[1]][tokens[2]]];
     }
     if (value1IsAName) {
-        return [Instructions[tokens[0]][tokens[1]], convertNumberToBytes(value2)].flat();
+        return tokens[2] === undefined ?
+            [Instructions[tokens[0]][tokens[1]]].flat() :
+            [Instructions[tokens[0]][tokens[1]], convertNumberToBytes(value2)].flat();
     } else {
         return tokens[1] === undefined ? [Instructions[tokens[0]]].flat() : [Instructions[tokens[0]], convertNumberToBytes(value1)].flat();
     }
