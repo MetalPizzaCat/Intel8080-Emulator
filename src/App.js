@@ -3,7 +3,8 @@ import React from 'react';
 import RegistersDisplay from './RegistersDisplay';
 import MemoryDisplay from './MemoryDisplay';
 import FlagsDisplay from './FlagsDisplay';
-import Interpreter, { convertTextToCode, executionStep } from './Interpreter';
+import Interpreter, { executionStep } from './Interpreter';
+import { convertTextToCode } from './Parser';
 import StackDisplay from './StackDisplay';
 
 export default class App extends React.Component {

@@ -20,13 +20,9 @@
     background-color: rgb(78, 88, 121);
 }
 
-.MemoryCell {}
-
 .CurrentCell {
     background-color: green;
 }
-
-.MemoryTableBody {}
 
 .Registers {
     display: inline-flex;

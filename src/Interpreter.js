@@ -4,6 +4,7 @@
  */
 
 import { InstructionLengthInfo, Instructions, JumpInstructions } from "./AssemblyInfo";
+import { convertNumberToBytes, convertBytesToNumber } from './Helpers';
 
 /**Class that stores all of the processor related info */
 export default class Interpreter {
@@ -83,113 +84,6 @@ export function checkFlags(value) {
     }
 }
 
-/**Convert number to a byte array that is stored in the i8080 compatible way
-* Right pair of the number first
-*/
-function convertNumberToBytes(number) {
-    if (number > 0xff) {
-        return [number & 0x00FF, (number & 0xFF00) >> 8]
-    }
-    return [number];
-}
-
-/**Convert two bytes of 8bit numbers back into 16bit number */
-function convertBytesToNumber(bytes) {
-    return (bytes[0] << 8) + bytes[1];
-}
-
-/**Converts tokens for the line into byte codes for the instruction and the arguments */
-function convertTokensToBytes(tokens) {
-    let argumentCount = 0;
-    for (let i = 1; i < tokens.length; i++) {
-        argumentCount += (tokens[i] !== undefined ? 1 : 0);
-    }
-    if (!(tokens[0] in Instructions)) {
-        throw Error("Unknown instruction");
-    }
-    if (argumentCount !== InstructionLengthInfo[tokens[0]]) {
-        throw Error("Invalid number of arguments");
-    }
-    let value1 = parseInt(tokens[1]);
-    let value2 = parseInt(tokens[2]);
-    let value1IsAName = tokens[1] !== undefined && isNaN(value1);
-    let value2IsAName = tokens[2] !== undefined && isNaN(value2);
-    if (value1IsAName && value2IsAName) {
-        return [Instructions[tokens[0]][tokens[1]][tokens[2]]];
-    }
-    if (value1IsAName) {
-        return [Instructions[tokens[0]][tokens[1]], convertNumberToBytes(value2)].flat();
-    } else {
-        return tokens[1] === undefined ? [Instructions[tokens[0]]].flat() : [Instructions[tokens[0]], convertNumberToBytes(value1)].flat();
-    }
-}
-
-function parseJumpInstruction(tokens, location, jumps, unfinishedJumps) {
-    //jump commands are always excepting one argument so to avoid having label accidentally converted into registry name 
-    let result = [];
-    result.push(Instructions[tokens[0]]);
-    if (tokens[1] in jumps) {
-        let index = convertNumberToBytes(jumps[tokens[1]] + 0x800);
-        result.push(index[0]);
-        result.push(index[1]);
-    }
-    else {
-        unfinishedJumps.push({ name: tokens[1], location: location + 1 });
-        result.push(undefined);
-        result.push(undefined);
-    }
-    return result;
-}
-
-/**Convert assembly text code into bytes and return  resulting  memory bank */
-export function convertTextToCode(text) {
-    let program = Array(0xbb0 - 0x800).fill(0);
-    //records places in memory that reference jump labels
-    let jumps = {};
-    let unfinishedJumps = [];
-    let errors = [];
-    let counter = 0;
-    let lineCounter = 0;
-    //regular expression that will match every comment on every line
-    text = text.replaceAll(/( *)(;)(.*)/g, "");
-    const labelRegEx = /[A-z]+(?=:)/;
-    let lines = text.split("\n");
-    for (let line of lines) {
-        try {
-            if (line.match(/^(\s)+$/) != null || line.length === 0) {
-                lineCounter++;
-                continue;
-            }
-            let labelName = line.match(labelRegEx);
-            if (labelName != null) {
-                jumps[labelName[0]] = counter;
-                lineCounter++;
-                continue;
-            }
-
-            let tokens = line.split(/\s*(?: |,|$)\s*/).filter(token => token.length > 0);
-            //we have to take special action incase of jump and call instructions because they can accept labels as input 
-            let isJump = (JumpInstructions.includes(tokens[0]) && tokens.length === 2);
-            let bytes = isJump ? parseJumpInstruction(tokens, counter, jumps, unfinishedJumps) : convertTokensToBytes(tokens);
-            for (let byte of bytes) {
-                program[counter++] = byte;
-            }
-        } catch (err) {
-            errors.push({
-                line: lineCounter,
-                error: err.message
-            });
-        }
-        lineCounter++;
-    }
-    for (let jump of unfinishedJumps) {
-        let location = convertNumberToBytes(0x800 + jumps[jump.name]);
-        program[jump.location] = location[0];
-        program[jump.location + 1] = location[1];
-    }
-    return { program: program, errors: errors };
-}
-
 function add(interpreter, value) {
     let result = interpreter.registry.a + interpreter.registry[value];
     interpreter.flags = checkFlags(result);
@@ -232,6 +126,26 @@ function ani(interpreter, value) {
     interpreter.flags = flags;
 }
 
+/**Reads next 16bites of data */
+function readWord(interpreter) {
+    return [
+        interpreter.memory[++interpreter.programCounter],
+        interpreter.memory[++interpreter.programCounter]
+    ].reverse();
+}
+
+function readWordFromStack(interpreter) {
+    return [
+        interpreter.memory[++interpreter.stackPointer],
+        interpreter.memory[++interpreter.stackPointer]
+    ];
+}
+
+function writeToStack(interpreter, bytes) {
+    interpreter.memory[interpreter.stackPointer--] = bytes[0];
+    interpreter.memory[interpreter.stackPointer--] = bytes[1];
+}
+
 export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
@@ -262,62 +176,42 @@ export function executionStep(interpreter) {
             break;
         case Instructions.lxi.b:
             {
-                let data = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ].reverse();
+                let data = readWord(interpreter);
                 interpreter.registry.b = data[0];
                 interpreter.registry.c = data[1];
             }
             break;
         case Instructions.lxi.d:
             {
-                let data = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ].reverse();
+                let data = readWord(interpreter);
                 interpreter.registry.d = data[0];
                 interpreter.registry.e = data[1];
             }
             break;
         case Instructions.lxi.h:
             {
-                let data = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ].reverse();
+                let data = readWord(interpreter);
                 interpreter.registry.h = data[0];
                 interpreter.registry.l = data[1];
             }
             break;
         case Instructions.lxi.sp:
             {
-                let data = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ].reverse();
+                let data = readWord(interpreter);
                 let address = convertBytesToNumber(data);
                 interpreter.stackPointer = address - 0x800;
             }
             break;
         case Instructions.lhld:
             {
-                let bytes = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ].reverse();
-                let address = convertBytesToNumber(bytes) - 0x800;
+                let address = convertBytesToNumber(readWord(interpreter)) - 0x800;
                 interpreter.registry.h = interpreter.memory[address + 1];
                 interpreter.registry.l = interpreter.memory[address];
             }
             break;
         case Instructions.shld:
             {
-                let bytes = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ].reverse();
-                let address = convertBytesToNumber(bytes) - 0x800;
+                let address = convertBytesToNumber(readWord(interpreter)) - 0x800;
                 interpreter.memory[address + 1] = interpreter.registry.h;
                 interpreter.memory[address] = interpreter.registry.l;
             }
@@ -327,56 +221,24 @@ export function executionStep(interpreter) {
             [interpreter.registry.l, interpreter.registry.e] = [interpreter.registry.e, interpreter.registry.l];
             break;
         case Instructions.sta:
-            {
-                //read next 2 bytes
-                let address = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ];
-                interpreter.memory[convertBytesToNumber(address.reverse()) - 0x800] = interpreter.registry.a;
-            }
+            interpreter.memory[convertBytesToNumber(readWord(interpreter)) - 0x800] = interpreter.registry.a;
             break;
         case Instructions.lda:
-            {
-                //read next 2 bytes
-                let address = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ];
-                interpreter.registry.a = interpreter.memory[convertBytesToNumber(address.reverse()) - 0x800];
-            }
+            interpreter.registry.a = interpreter.memory[convertBytesToNumber(readWord(interpreter)) - 0x800]
             break;
         case Instructions.jmp:
-            {
-                //read next 2 bytes
-                let address = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ];
-                interpreter.programCounter = convertBytesToNumber(address.reverse()) - 0x800 - 1;
-            }
+            interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
             break;
         case Instructions.call:
             {
-                let savedAddress = convertNumberToBytes(interpreter.programCounter + 0x800);
-                interpreter.memory[interpreter.stackPointer--] = savedAddress[0];
-                interpreter.memory[interpreter.stackPointer--] = savedAddress[1];
-
-                let address = [
-                    interpreter.memory[++interpreter.programCounter],
-                    interpreter.memory[++interpreter.programCounter]
-                ];
-                interpreter.programCounter = convertBytesToNumber(address.reverse()) - 0x800 - 1;
+                //read address of the current operation and save it with offset(because that's where in memory next operation should be)
+                let savedAddress = convertNumberToBytes(interpreter.programCounter + 0x800 + 3);
+                writeToStack(interpreter, savedAddress);
+                interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
             }
             break;
         case Instructions.ret:
-            {
-                let address = [
-                    interpreter.memory[++interpreter.stackPointer],
-                    interpreter.memory[++interpreter.stackPointer]
-                ];
-                interpreter.programCounter = convertBytesToNumber(address) - 0x800 - 1;
-            }
+            interpreter.programCounter = convertBytesToNumber(readWordFromStack(interpreter)) - 0x800 - 1;
             break;
         //------MOV------
         case Instructions.mov.b.c: //mov b,c
