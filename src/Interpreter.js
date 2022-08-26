@@ -189,6 +189,23 @@ function jump(interpreter) {
     interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
 }
 
+function cmp(interpreter, name) {
+    let value = interpreter.registry[name];
+    let result = interpreter.registry.a - value;
+    interpreter.flags.z = result === 0;
+    interpreter.flags.s = (0x80 === (result & 0x80));
+    interpreter.flags.p = parity(result, 8);
+    interpreter.flags.c = interpreter.registry.a < value;
+}
+
+function cpi(interpreter, value) {
+    let result = interpreter.registry.a - value;
+    interpreter.flags.z = result === 0;
+    interpreter.flags.s = (0x80 === (result & 0x80));
+    interpreter.flags.p = parity(result, 8);
+    interpreter.flags.c = interpreter.registry.a < value;
+}
+
 export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
@@ -393,6 +410,34 @@ export function executionStep(interpreter) {
             break;
         case Instructions.ret:
             interpreter.programCounter = convertBytesToNumber(readWordFromStack(interpreter)) - 0x800 - 1;
+            break;
+        case Instructions.cpi:
+            cpi(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
+        //------CMP------
+        case Instructions.cmp.b:
+            cmp(interpreter, 'b');
+            break;
+        case Instructions.cmp.c:
+            cmp(interpreter, 'c');
+            break;
+        case Instructions.cmp.d:
+            cmp(interpreter, 'd');
+            break;
+        case Instructions.cmp.e:
+            cmp(interpreter, 'e');
+            break;
+        case Instructions.cmp.h:
+            cmp(interpreter, 'h');
+            break;
+        case Instructions.cmp.l:
+            cmp(interpreter, 'l');
+            break;
+        case Instructions.cmp.m:
+            cmp(interpreter, 'm');
+            break;
+        case Instructions.cmp.a:
+            cmp(interpreter, 'a');
             break;
         //------MOV------
         case Instructions.mov.b.c: //mov b,c
