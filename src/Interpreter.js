@@ -178,12 +178,29 @@ function writeToStack(interpreter, bytes) {
     interpreter.memory[interpreter.stackPointer--] = bytes[1];
 }
 
+function call(interpreter) {
+    //read address of the current operation and save it with offset(because that's where in memory next operation should be)
+    let savedAddress = convertNumberToBytes(interpreter.programCounter + 0x800 + 3);
+    writeToStack(interpreter, savedAddress);
+    interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
+}
+
+function jump(interpreter) {
+    interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
+}
+
 export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
         //i generated them via c# script :P
         case Instructions.hlt: case 118:
             interpreter.finishedExecution = true;
+            break;
+        case Instructions.cma:
+            interpreter.registry.a = ~interpreter.registry.a;
+            break;
+        case Instructions.cmc:
+            interpreter.flags.c = !interpreter.flags.c;
             break;
         case Instructions.ral:
             {
@@ -289,14 +306,89 @@ export function executionStep(interpreter) {
             interpreter.registry.a = interpreter.memory[convertBytesToNumber(readWord(interpreter)) - 0x800]
             break;
         case Instructions.jmp:
-            interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
+            jump(interpreter);
+            break;
+        case Instructions.jz:
+            if (interpreter.flags.z === false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jnz:
+            if (interpreter.flags.z !== false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jp:
+            if (interpreter.flags.s === false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jm:
+            if (interpreter.flags.s !== false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jc:
+            if (interpreter.flags.c !== false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jnc:
+            if (interpreter.flags.c === false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jpe:
+            if (interpreter.flags.p !== false) {
+                jump(interpreter);
+            }
+            break;
+        case Instructions.jpo:
+            if (interpreter.flags.p === false) {
+                jump(interpreter);
+            }
             break;
         case Instructions.call:
-            {
-                //read address of the current operation and save it with offset(because that's where in memory next operation should be)
-                let savedAddress = convertNumberToBytes(interpreter.programCounter + 0x800 + 3);
-                writeToStack(interpreter, savedAddress);
-                interpreter.programCounter = convertBytesToNumber(readWord(interpreter)) - 0x800 - 1;
+            call(interpreter);
+            break;
+        case Instructions.cz:
+            if (interpreter.flags.z === false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cnz:
+            if (interpreter.flags.z !== false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cp:
+            if (interpreter.flags.s === false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cm:
+            if (interpreter.flags.s !== false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cc:
+            if (interpreter.flags.c !== false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cnc:
+            if (interpreter.flags.c === false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cpe:
+            if (interpreter.flags.p !== false) {
+                call(interpreter);
+            }
+            break;
+        case Instructions.cpo:
+            if (interpreter.flags.p === false) {
+                call(interpreter);
             }
             break;
         case Instructions.ret:
