@@ -86,6 +86,13 @@ export function getValue(id, interpreter) {
     return (typeof id) == "number" ? id : interpreter.registry[id];
 }
 
+function getRegister(interpreter, name) {
+    if (name === 'm') {
+        return getMemory(interpreter);
+    }
+    return interpreter.registry[name];
+}
+
 /**Performs checks on the given value and returns FLAGS objects with results */
 export function checkFlags(value) {
     //clean value from any bits that technically don't fit into memory cell
@@ -100,13 +107,13 @@ export function checkFlags(value) {
 }
 
 function sub(interpreter, value) {
-    let result = interpreter.registry.a - interpreter.registry[value];
+    let result = interpreter.registry.a - getRegister(interpreter,value);
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
 
 function sbb(interpreter, value) {
-    let result = interpreter.registry.a - interpreter.registry[value] - (interpreter.flags.c ? 1 : 0);
+    let result = interpreter.registry.a - getRegister(interpreter,value) - (interpreter.flags.c ? 1 : 0);
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
@@ -123,7 +130,7 @@ function sui(interpreter, value) {
 }
 
 function add(interpreter, value) {
-    let result = interpreter.registry.a + interpreter.registry[value];
+    let result = interpreter.registry.a + getRegister(interpreter,value);
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
@@ -135,7 +142,7 @@ function adi(interpreter, value) {
 }
 
 function adc(interpreter, value) {
-    let result = interpreter.registry.a + interpreter.registry[value] + (interpreter.flags.c ? 1 : 0);
+    let result = interpreter.registry.a + getRegister(interpreter,value) + (interpreter.flags.c ? 1 : 0);
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
@@ -147,7 +154,7 @@ function aci(interpreter, value) {
 }
 
 function ana(interpreter, value) {
-    let result = interpreter.registry.a & interpreter.registry[value];
+    let result = interpreter.registry.a & getRegister(interpreter,value);
     let flags = checkFlags(result);
     //Carry bit must be reset according to documentation
     flags.c = false;
@@ -175,7 +182,7 @@ function inr(interpreter, name) {
 }
 
 function ora(interpreter, value) {
-    let result = interpreter.registry.a | interpreter.registry[value];
+    let result = interpreter.registry.a | getRegister(interpreter,value);
     let flags = checkFlags(result);
     //Carry bit must be reset according to documentation
     flags.c = false;
@@ -183,6 +190,14 @@ function ora(interpreter, value) {
     interpreter.flags = flags;
 }
 
+function xra(interpreter, value) {
+    let result = interpreter.registry.a ^ getRegister(interpreter,value);
+    let flags = checkFlags(result);
+    flags.c = false;
+    flags.ac = false;
+    interpreter.registry.a = result & 0xff;
+    interpreter.flags = flags;
+}
 
 /**Reads next 16bites of data */
 function readWord(interpreter) {
@@ -260,6 +275,9 @@ function stax(interpreter, h, l) {
     interpreter.memory[address - 0x800] = interpreter.registry.a;
 }
 
+function ret(interpreter) {
+    interpreter.programCounter = convertBytesToNumber(readWordFromStack(interpreter)) - 0x800 - 1;
+}
 export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
@@ -517,11 +535,52 @@ export function executionStep(interpreter) {
             }
             break;
         case Instructions.ret:
-            interpreter.programCounter = convertBytesToNumber(readWordFromStack(interpreter)) - 0x800 - 1;
+            ret(interpreter);
+            break;
+        case Instructions.rz:
+            if (interpreter.flags.z === false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rnz:
+            if (interpreter.flags.z !== false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rp:
+            if (interpreter.flags.s === false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rm:
+            if (interpreter.flags.s !== false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rc:
+            if (interpreter.flags.c !== false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rnc:
+            if (interpreter.flags.c === false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rpe:
+            if (interpreter.flags.p !== false) {
+                ret(interpreter);
+            }
+            break;
+        case Instructions.rpo:
+            if (interpreter.flags.p === false) {
+                ret(interpreter);
+            }
             break;
         case Instructions.cpi:
             cpi(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
+
         //------CMP------
         case Instructions.cmp.b:
             cmp(interpreter, 'b');
@@ -900,6 +959,23 @@ export function executionStep(interpreter) {
         case Instructions.sbb.m: sbb(interpreter, 'm');
             break;
         case Instructions.sbb.a: sbb(interpreter, 'a');
+            break;
+        //------XRA------
+        case Instructions.xra.b: xra(interpreter, 'b');
+            break;
+        case Instructions.xra.c: xra(interpreter, 'c');
+            break;
+        case Instructions.xra.d: xra(interpreter, 'd');
+            break;
+        case Instructions.xra.e: xra(interpreter, 'e');
+            break;
+        case Instructions.xra.h: xra(interpreter, 'h');
+            break;
+        case Instructions.xra.l: xra(interpreter, 'l');
+            break;
+        case Instructions.xra.m: xra(interpreter, 'm');
+            break;
+        case Instructions.xra.a: xra(interpreter, 'a');
             break;
         default:
             throw Error("Unrecognized byte code");
