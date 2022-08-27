@@ -40,6 +40,11 @@ export const InstructionLengthInfo = {
     "ora": 1,
     "cmp": 1,
     "cpi": 1,
+    "sbi": 1,
+    "sui": 1,
+    "dcx": 1,
+    "stax": 1,
+    "stc": 0,
     "cma": 0,
     "cmc": 0,
     "ral": 0,
@@ -50,6 +55,7 @@ export const InstructionLengthInfo = {
     "pchl": 0,
     "ret": 0,
     "xchg": 0,
+    "daa": 0,
     "hlt": 0
 }
 
@@ -98,6 +104,13 @@ export const Instructions = {
     pchl: 0xe9,
     shld: 0x22,
     cpi: 0xfe,
+    sbi: 0xde,
+    stc: 0x37,
+    sui: 0xd6,
+    stax: {
+        b: 0x02,
+        d: 0x12
+    },
     cmp: {
         b: 0xb8,
         c: 0xb9,
@@ -107,6 +120,12 @@ export const Instructions = {
         l: 0xbd,
         m: 0xbe,
         a: 0xbf,
+    },
+    dcx: {
+        b: 0xb,
+        d: 0x1b,
+        h: 0x2b,
+        sp: 0x3b
     },
     lxi: {
         b: 0x01,
@@ -120,9 +139,9 @@ export const Instructions = {
     },
     lhld: 0x2a,
     push: {
-        b: 0xc5,
-        d: 0xd5,
-        h: 0xf5
+        b: 0xc1,
+        d: 0xd1,
+        h: 0xf1
     },
     pop: {
         b: 0xc5,

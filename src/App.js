@@ -47,9 +47,16 @@ export default class App extends React.Component {
 
   /**Step one instruction */
   step() {
-    if (!this.state.interpreter.finishedExecution) {
-      const int = executionStep(this.state.interpreter);
-      this.setState({ interpreter: int });
+    try {
+      if (!this.state.interpreter.finishedExecution) {
+        const int = executionStep(this.state.interpreter);
+        this.setState({ interpreter: int });
+      }
+    }
+    catch (error) {
+      this.setState({
+        errors: [<p className='Error' key={1}>{"Execution error: " + error.message}</p>]
+      })
     }
   }
 

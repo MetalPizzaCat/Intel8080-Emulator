@@ -18,9 +18,17 @@ function convertTokensToBytes(tokens) {
     let value1IsAName = tokens[1] !== undefined && isNaN(value1);
     let value2IsAName = tokens[2] !== undefined && isNaN(value2);
     if (value1IsAName && value2IsAName) {
-        return [Instructions[tokens[0]][tokens[1]][tokens[2]]];
+        let byte = Instructions[tokens[0]][tokens[1]][tokens[2]];
+        if (byte === undefined) {
+            throw Error("Operation has invalid arguments")
+        }
+        return [byte];
     }
     if (value1IsAName) {
+        let byte = Instructions[tokens[0]][tokens[1]];
+        if (byte === undefined) {
+            throw Error("Operation has invalid arguments")
+        }
         return tokens[2] === undefined ?
             [Instructions[tokens[0]][tokens[1]]].flat() :
             [Instructions[tokens[0]][tokens[1]], convertNumberToBytes(value2)].flat();

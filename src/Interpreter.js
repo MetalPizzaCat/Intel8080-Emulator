@@ -48,6 +48,21 @@ export default class Interpreter {
     }
 }
 
+function getMemory(interpreter) {
+    let address = (interpreter.registry.h << 8) | interpreter.registry.l;
+    if (address < 0x800 || address > 0xbaf) {
+        throw Error("Cannot access contents of memory cell at HL. Address points to invalid space");
+    }
+    return interpreter.memory[address - 0x800];
+}
+
+function setMemory(interpreter, value) {
+    let address = (interpreter.registry.h << 8) | interpreter.registry.l;
+    if (address < 0x800 || address > 0xbaf) {
+        throw Error("Cannot access contents of memory cell at HL. Address points to invalid space");
+    }
+    interpreter.memory[address - 0x800] = value;
+}
 /**Check for parity(?) 
   * This technically returns true if amount of bits that are equal to 1 is even
  */
@@ -84,12 +99,6 @@ export function checkFlags(value) {
     }
 }
 
-function add(interpreter, value) {
-    let result = interpreter.registry.a + interpreter.registry[value];
-    interpreter.flags = checkFlags(result);
-    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
-}
-
 function sub(interpreter, value) {
     let result = interpreter.registry.a - interpreter.registry[value];
     interpreter.flags = checkFlags(result);
@@ -98,6 +107,23 @@ function sub(interpreter, value) {
 
 function sbb(interpreter, value) {
     let result = interpreter.registry.a - interpreter.registry[value] - (interpreter.flags.c ? 1 : 0);
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+
+function sbi(interpreter, value) {
+    let result = interpreter.registry.a - value - (interpreter.flags.c ? 1 : 0);
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+function sui(interpreter, value) {
+    let result = interpreter.registry.a - value;
+    interpreter.flags = checkFlags(result);
+    interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
+}
+
+function add(interpreter, value) {
+    let result = interpreter.registry.a + interpreter.registry[value];
     interpreter.flags = checkFlags(result);
     interpreter.registry.a = result & 0xff;//trim bits that would not physically fit in the cell in the actual processor
 }
@@ -206,18 +232,62 @@ function cpi(interpreter, value) {
     interpreter.flags.c = interpreter.registry.a < value;
 }
 
+function daa(interpreter) {
+    let fourLsb = ((interpreter.registry.a << 4) >> 4);
+    if (fourLsb > 0x09 || interpreter.flags.ac === true) {
+        interpreter.registry.a = interpreter.registry.a + 0x06;
+        interpreter.flags = checkFlags(fourLsb + 0x06);
+    }
+
+    let fourMsb = interpreter.registry.a >> 4;
+    if (fourLsb > 0x09 || interpreter.flags.ac === true) {
+        interpreter.registry.a = interpreter.registry.a + 0x06;
+        interpreter.flags = checkFlags(fourMsb + 0x06);
+    }
+}
+
+function dcx(h, l) {
+    let value = (h << 8) | l;
+    value--;
+    return [(value & 0xff00) >> 8, value & 0xff];
+}
+
+function stax(interpreter, h, l) {
+    let address = (h << 8) | l;
+    if (address < 0x800 || address > 0xbaf) {
+        throw Error("Cannot write to memory cell at " + address.toString(16) + ". Address points to invalid space");
+    }
+    interpreter.memory[address - 0x800] = interpreter.registry.a;
+}
+
 export function executionStep(interpreter) {
     let opByte = interpreter.memory[interpreter.programCounter];
     switch (opByte) {
         //i generated them via c# script :P
+        case 0:
+            //skip NOP
+            break;
         case Instructions.hlt: case 118:
             interpreter.finishedExecution = true;
+            break;
+        case Instructions.stc:
+            interpreter.flags.c = 1;
             break;
         case Instructions.cma:
             interpreter.registry.a = ~interpreter.registry.a;
             break;
         case Instructions.cmc:
             interpreter.flags.c = !interpreter.flags.c;
+            break;
+
+        case Instructions.sui:
+            sui(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
+        case Instructions.sbi:
+            sbi(interpreter, interpreter.memory[++interpreter.programCounter]);
+            break;
+        case Instructions.daa:
+            daa(interpreter);
             break;
         case Instructions.ral:
             {
@@ -259,16 +329,49 @@ export function executionStep(interpreter) {
             aci(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
         case Instructions.push.b:
-            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.b;
-            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.c;
+            interpreter.memory[interpreter.stackPointer] = interpreter.registry.b;
+            interpreter.memory[--interpreter.stackPointer] = interpreter.registry.c;
             break;
         case Instructions.push.d:
-            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.d;
-            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.e;
+            interpreter.memory[interpreter.stackPointer] = interpreter.registry.d;
+            interpreter.memory[--interpreter.stackPointer] = interpreter.registry.e;
             break;
         case Instructions.push.h:
-            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.h;
-            interpreter.memory[interpreter.stackPointer--] = interpreter.registry.l;
+            interpreter.memory[interpreter.stackPointer] = interpreter.registry.h;
+            interpreter.memory[--interpreter.stackPointer] = interpreter.registry.l;
+            break;
+        case Instructions.pop.b:
+            interpreter.registry.b = interpreter.memory[interpreter.stackPointer];
+            interpreter.registry.c = interpreter.memory[++interpreter.stackPointer];
+            interpreter.stackPointer++;
+            break;
+        case Instructions.pop.d:
+            interpreter.registry.d = interpreter.memory[interpreter.stackPointer];
+            interpreter.registry.e = interpreter.memory[++interpreter.stackPointer];
+            interpreter.stackPointer++;
+            break;
+        case Instructions.pop.h:
+            interpreter.registry.h = interpreter.memory[interpreter.stackPointer];
+            interpreter.registry.l = interpreter.memory[++interpreter.stackPointer];
+            interpreter.stackPointer++;
+            break;
+        case Instructions.dcx.b:
+            [interpreter.registry.b, interpreter.registry.c] = dcx(interpreter.registry.b, interpreter.registry.c);
+            break;
+        case Instructions.dcx.d:
+            [interpreter.registry.d, interpreter.registry.e] = dcx(interpreter.registry.d, interpreter.registry.e);
+            break;
+        case Instructions.dcx.h:
+            [interpreter.registry.h, interpreter.registry.l] = dcx(interpreter.registry.h, interpreter.registry.l);
+            break;
+        case Instructions.dcx.sp:
+            interpreter.stackPointer--;
+            break;
+        case Instructions.stax.b:
+            stax(interpreter, interpreter.registry.b, interpreter.registry.c);
+            break;
+        case Instructions.stax.d:
+            stax(interpreter, interpreter.registry.d, interpreter.registry.e);
             break;
         case Instructions.lxi.b:
             {
@@ -315,6 +418,11 @@ export function executionStep(interpreter) {
         case Instructions.xchg:
             [interpreter.registry.h, interpreter.registry.d] = [interpreter.registry.d, interpreter.registry.h];
             [interpreter.registry.l, interpreter.registry.e] = [interpreter.registry.e, interpreter.registry.l];
+            break;
+        case Instructions.xthl:
+            [interpreter.registry.l, interpreter.memory[interpreter.stackPointer]] = [interpreter.memory[interpreter.stackPointer], interpreter.registry.l];
+            interpreter.stackPointer++;
+            [interpreter.registry.h, interpreter.memory[interpreter.stackPointer]] = [interpreter.memory[interpreter.stackPointer], interpreter.registry.h];
             break;
         case Instructions.sta:
             interpreter.memory[convertBytesToNumber(readWord(interpreter)) - 0x800] = interpreter.registry.a;
@@ -456,7 +564,7 @@ export function executionStep(interpreter) {
             interpreter.registry.b = interpreter.registry.l;
             break;
         case Instructions.mov.b.m: //mov b,m
-            interpreter.registry.b = interpreter.registry.m;
+            interpreter.registry.b = getMemory(interpreter);
             break;
         case Instructions.mov.b.a: //mov b,a
             interpreter.registry.b = interpreter.registry.a;
@@ -477,7 +585,7 @@ export function executionStep(interpreter) {
             interpreter.registry.c = interpreter.registry.l;
             break;
         case Instructions.mov.c.m: //mov c,m
-            interpreter.registry.c = interpreter.registry.m;
+            interpreter.registry.c = getMemory(interpreter);
             break;
         case Instructions.mov.c.a: //mov c,a
             interpreter.registry.c = interpreter.registry.a;
@@ -498,7 +606,7 @@ export function executionStep(interpreter) {
             interpreter.registry.d = interpreter.registry.l;
             break;
         case Instructions.mov.d.m: //mov d,m
-            interpreter.registry.d = interpreter.registry.m;
+            interpreter.registry.d = getMemory(interpreter);
             break;
         case Instructions.mov.d.a: //mov d,a
             interpreter.registry.d = interpreter.registry.a;
@@ -519,7 +627,7 @@ export function executionStep(interpreter) {
             interpreter.registry.e = interpreter.registry.l;
             break;
         case Instructions.mov.e.m: //mov e,m
-            interpreter.registry.e = interpreter.registry.m;
+            interpreter.registry.e = getMemory(interpreter);
             break;
         case Instructions.mov.e.a: //mov e,a
             interpreter.registry.e = interpreter.registry.a;
@@ -540,7 +648,7 @@ export function executionStep(interpreter) {
             interpreter.registry.h = interpreter.registry.l;
             break;
         case Instructions.mov.h.m: //mov h,m
-            interpreter.registry.h = interpreter.registry.m;
+            interpreter.registry.h = getMemory(interpreter);
             break;
         case Instructions.mov.h.a: //mov h,a
             interpreter.registry.h = interpreter.registry.a;
@@ -561,31 +669,31 @@ export function executionStep(interpreter) {
             interpreter.registry.l = interpreter.registry.h;
             break;
         case Instructions.mov.l.m: //mov l,m
-            interpreter.registry.l = interpreter.registry.m;
+            interpreter.registry.l = getMemory(interpreter);
             break;
         case Instructions.mov.l.a: //mov l,a
             interpreter.registry.l = interpreter.registry.a;
             break;
         case Instructions.mov.m.b: //mov m,b
-            interpreter.registry.m = interpreter.registry.b;
+            setMemory(interpreter, interpreter.registry.b);
             break;
         case Instructions.mov.m.c: //mov m,c
-            interpreter.registry.m = interpreter.registry.c;
+            setMemory(interpreter, interpreter.registry.c);
             break;
         case Instructions.mov.m.d: //mov m,d
-            interpreter.registry.m = interpreter.registry.d;
+            setMemory(interpreter, interpreter.registry.d);
             break;
         case Instructions.mov.m.e: //mov m,e
-            interpreter.registry.m = interpreter.registry.e;
+            setMemory(interpreter, interpreter.registry.e);
             break;
         case Instructions.mov.m.h: //mov m,h
-            interpreter.registry.m = interpreter.registry.h;
+            setMemory(interpreter, interpreter.registry.h);
             break;
         case Instructions.mov.m.l: //mov m,l
-            interpreter.registry.m = interpreter.registry.l;
+            setMemory(interpreter, interpreter.registry.l);
             break;
         case Instructions.mov.m.a: //mov m,a
-            interpreter.registry.m = interpreter.registry.a;
+            setMemory(interpreter, interpreter.registry.a);
             break;
         case Instructions.mov.a.b: //mov a,b
             interpreter.registry.a = interpreter.registry.b;
@@ -606,7 +714,7 @@ export function executionStep(interpreter) {
             interpreter.registry.a = interpreter.registry.l;
             break;
         case Instructions.mov.a.m: //mov a,m
-            interpreter.registry.a = interpreter.registry.m;
+            interpreter.registry.a = getMemory(interpreter);
             break;
         //------MVI------
         case Instructions.mvi.b: //mvi b,d8
@@ -628,7 +736,7 @@ export function executionStep(interpreter) {
             interpreter.registry.l = interpreter.memory[++interpreter.programCounter];
             break;
         case Instructions.mvi.m: //mvi m,d8
-            interpreter.registry.m = interpreter.memory[++interpreter.programCounter];
+            setMemory(interpreter, interpreter.memory[++interpreter.programCounter]);
             break;
         case Instructions.mvi.a: //mvi a,d8
             interpreter.registry.a = interpreter.memory[++interpreter.programCounter];
