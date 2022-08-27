@@ -112,6 +112,10 @@ export default class App extends React.Component {
   }
   render() {
     return <div className="App">
+      <div className='Footer'>
+        <h2>Intel8080 assembly interpreter by MetalPizzaCat</h2>
+        <a href='https://github.com/MetalPizzaCat/Intel8080-Emulator'>Repository</a>
+      </div>
       <div className='Controls'>
         <button onClick={this.run}>Assemble</button>
         <button onClick={this.step}>Step</button>
@@ -159,6 +163,7 @@ export default class App extends React.Component {
           </div>
         </div>
       </div>
+
     </div>
   }
 }
