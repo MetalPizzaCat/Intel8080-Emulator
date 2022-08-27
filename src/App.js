@@ -122,7 +122,12 @@ export default class App extends React.Component {
         <div>
           <p>Code editor: </p>
           <div className='Code'>
+
             <div className='CodeEditorBlock'>
+              <div className='Info'>
+                <p>Numbers are in decimal by default</p>
+                <p>To write in hex use <code>0x</code> prefix</p>
+              </div>
               <div className='CodeEditorLineNumbers'>
                 {this.state.lineNumbers}
               </div>
