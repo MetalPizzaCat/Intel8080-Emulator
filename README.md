@@ -1,11 +1,13 @@
-#Intel 8080 assembly interpreter
-This is a simple assembly interpreter for i8080 processor written in javascript
+# Simple intel 8080 assembly interpreter
+A simple interpreter for intel 8080 assembly written in javascript using React.js.
+This is meant as an education tool for learning assembly language. Intel 8080 had a very small amount of instructions and features making it easier for people to understand basics of assembly
 
-
-## Stages
-* ### Writing stage
-At this stage user can write any code and write any bits to memory and registry
-* ### Assembly stage
-At this stage program will go  over all of the text code and convert it into json structure that is much easier to operate upon, while writing operation bytes into memory. Any bytes written by hand by user that occupy space where assembler will write to will be overridden
-* ### Run stage
-Program will execute every command step by step. Manually writing to stack/memory/registry/counters is not allowed during execution 
+## Notes
+* ### Programs can modify themselves
+    Because both program code and memory share same space, code can modify itself
+* ### This is meant as a remake/rebuild of a tool i had to use in university
+    This project is meant as replacement for tool that i had to use in university, which is why it has odd functionality like ability to edit any cell or register at any time. 
+    Original tool was written in borland pascal  for windows 98. *i had to use that tool 2021 :`)*
+* ### Some instructions are missing
+    In/Out and interruption instructions are missing because i chose them to be unnecessary for what this tool is meant to be. They may get added later
+    
